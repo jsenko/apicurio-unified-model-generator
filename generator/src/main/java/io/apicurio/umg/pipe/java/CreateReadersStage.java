@@ -1,23 +1,9 @@
 package io.apicurio.umg.pipe.java;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-
-import org.jboss.forge.roaster.Roaster;
-import org.jboss.forge.roaster.model.source.JavaClassSource;
-import org.jboss.forge.roaster.model.source.JavaInterfaceSource;
-import org.jboss.forge.roaster.model.source.MethodSource;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-
 import io.apicurio.umg.beans.SpecificationVersion;
 import io.apicurio.umg.beans.UnionRule;
-import io.apicurio.umg.beans.UnionRuleType;
 import io.apicurio.umg.models.concept.EntityModel;
 import io.apicurio.umg.models.concept.NamespaceModel;
 import io.apicurio.umg.models.concept.PropertyModel;
@@ -26,6 +12,21 @@ import io.apicurio.umg.models.concept.PropertyType;
 import io.apicurio.umg.pipe.java.method.BodyBuilder;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import org.apache.commons.lang3.StringUtils;
+import org.jboss.forge.roaster.Roaster;
+import org.jboss.forge.roaster.model.source.JavaClassSource;
+import org.jboss.forge.roaster.model.source.JavaInterfaceSource;
+import org.jboss.forge.roaster.model.source.MethodSource;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
+
+import static io.apicurio.umg.pipe.java.method.BodyBuilder.escapeJavaString;
 
 /**
  * Creates the i/o reader classes.  There is a bespoke reader for each specification
@@ -44,6 +45,7 @@ public class CreateReadersStage extends AbstractJavaStage {
 
     /**
      * Creates a reader for the given spec version.
+     *
      * @param specVersion
      */
     private void createReader(SpecificationVersion specVersion) {
@@ -83,6 +85,7 @@ public class CreateReadersStage extends AbstractJavaStage {
 
     /**
      * Creates a "readRoot(json)" method for this reader.
+     *
      * @param specVersion
      * @param readerClassSource
      * @param entityModel
@@ -164,7 +167,7 @@ public class CreateReadersStage extends AbstractJavaStage {
      * @param readerClassSource
      */
     private void createReadPropertyCode(BodyBuilder body, PropertyModelWithOrigin property, EntityModel entityModel,
-            JavaInterfaceSource javaEntity, JavaClassSource readerClassSource) {
+                                        JavaInterfaceSource javaEntity, JavaClassSource readerClassSource) {
         CreateReadPropertySnippet crp = new CreateReadPropertySnippet(property, entityModel, javaEntity, readerClassSource);
         body.clearContext();
         crp.writeTo(body);
@@ -616,17 +619,63 @@ public class CreateReadersStage extends AbstractJavaStage {
                     if (unionRule == null) {
                         body.append("if (JsonUtil.isObject(value)) {");
                     } else {
-                        body.addContext("rulePropertyName", unionRule.getPropertyName());
-                        if (unionRule.getRuleType() == UnionRuleType.propertyExists) {
-                            body.append("if (JsonUtil.isObjectWithProperty(value, \"${rulePropertyName}\")) {");
-                        } else if (unionRule.getRuleType() == UnionRuleType.propertyValue) {
-                            body.addContext("rulePropertyValue", unionRule.getPropertyValue());
-                            body.append("if (JsonUtil.isObjectWithPropertyValue(value, \"${rulePropertyName}\", \"${rulePropertyValue}\")) {");
-                        } else {
-                            throw new RuntimeException("Unsupported union rule: " + unionRule.getRuleType());
+                        switch (unionRule.getRuleType()) {
+
+                            /*
+                             * This rule tests whether the property is a specific JSON value.
+                             */
+                            case IsJsonValue: {
+                                var type = unionRule.getPropertyJsonType();
+                                Objects.requireNonNull(type);
+                                if (!List.of("object", "array", "string", "boolean", "number").contains(type)) {
+                                    throw new RuntimeException("Illegal union rule propertyJsonType: " + type);
+                                }
+                                body.addContext("type", StringUtils.capitalize(type));
+                                var value = unionRule.getPropertyJsonValue();
+                                Objects.requireNonNull(value);
+                                body.append("if (JsonUtil.is${type}(value) && JsonUtil.equals(value, JsonUtil.parse${type}(" + escapeJavaString(value) + "))) {");
+                            }
+                            break;
+                            case IsJsonObjectWithPropertyName: {
+                                var propertyName = unionRule.getPropertyName();
+                                Objects.requireNonNull(propertyName);
+                                body.addContext("propertyName", propertyName);
+                                body.append("if (JsonUtil.isObjectWithProperty(value, \"${propertyName}\")) {");
+                            }
+                            break;
+                            case IsJsonObjectWithoutPropertyName: {
+                                var propertyName = unionRule.getPropertyName();
+                                Objects.requireNonNull(propertyName);
+                                body.addContext("propertyName", propertyName);
+                                body.append("if (!JsonUtil.isObjectWithProperty(value, \"${propertyName}\")) {");
+                            }
+                            break;
+                            case IsJsonObjectWithPropertyType: {
+                                var propertyName = unionRule.getPropertyName();
+                                Objects.requireNonNull(propertyName);
+                                body.addContext("propertyName", propertyName);
+                                var type = unionRule.getPropertyJsonType();
+                                Objects.requireNonNull(type);
+                                body.addContext("type", StringUtils.capitalize(type));
+                                body.append("if (JsonUtil.isObjectWithProperty(value, \"${propertyName}\") && JsonUtil.is${type}(JsonUtil.getProperty(JsonUtil.toObject(value), \"${propertyName}\"))) {");
+                            }
+                            break;
+                            case IsJsonObjectWithPropertyValue: {
+                                var propertyName = unionRule.getPropertyName();
+                                Objects.requireNonNull(propertyName);
+                                body.addContext("propertyName", propertyName);
+                                var type = unionRule.getPropertyJsonType();
+                                Objects.requireNonNull(type);
+                                body.addContext("type", StringUtils.capitalize(type));
+                                var value = unionRule.getPropertyJsonValue();
+                                Objects.requireNonNull(value);
+                                body.append("if (JsonUtil.isObjectWithProperty(value, \"${propertyName}\") && " +
+                                        "JsonUtil.is${type}(JsonUtil.getProperty(JsonUtil.toObject(value), \"${propertyName}\")) && " +
+                                        "JsonUtil.equals(JsonUtil.getProperty(JsonUtil.toObject(value), \"${propertyName}\"), JsonUtil.parse${type}(" + escapeJavaString(value) + "))) {");
+                            }
+                            break;
                         }
                     }
-
                     body.append("    ObjectNode object = JsonUtil.toObject(value);");
                     body.append("    node.${setterMethodName}(node.${createMethodName}());");
                     body.append("    ${readMethodName}(object, (${propertyEntityType}) node.${getterMethodName}());");

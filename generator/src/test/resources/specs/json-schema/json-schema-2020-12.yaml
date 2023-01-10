@@ -1,0 +1,561 @@
+name: JSON Schema 2020-12
+version: 2020-12
+versions:
+  - version: 2020-12
+    url: https://tools.ietf.org/html/draft-bhutton-json-schema-validation-01
+prefix: JsonSchema202012
+namespace: io.apicurio.datamodels.models.jsonschema.v202012
+# NOTES:
+# - Keep everything in alphabetical order please
+# - Release notes: https://json-schema.org/draft/2020-12/release-notes.html
+
+typeAliases:
+  - name: Schema
+    type: ArraySchema|BooleanSchema|ComplexSchema|EmptySchema|FalseSchema|IntegerSchema|NullSchema|NumberSchema|ObjectSchema|StringSchema|TrueSchema
+    unionRules:
+      - unionType: ArraySchema
+        ruleType: IsJsonObjectWithPropertyValue
+        propertyName: type
+        propertyJsonType: string
+        propertyJsonValue: array
+      - unionType: BooleanSchema
+        ruleType: IsJsonObjectWithPropertyValue
+        propertyName: type
+        propertyJsonType: string
+        propertyJsonValue: boolean
+      - unionType: ComplexSchema
+        ruleType: IsJsonObjectWithPropertyType
+        propertyName: type
+        propertyJsonType: array
+      - unionType: EmptySchema
+        ruleType: IsJsonObjectWithoutPropertyName
+        propertyName: type
+      - unionType: FalseSchema
+        ruleType: IsJsonValue
+        propertyJsonType: boolean
+        propertyJsonValue: false
+      - unionType: IntegerSchema
+        ruleType: IsJsonObjectWithPropertyValue
+        propertyName: type
+        propertyJsonType: string
+        propertyJsonValue: integer
+      - unionType: NullSchema
+        ruleType: IsJsonObjectWithPropertyValue
+        propertyName: type
+        propertyJsonType: string
+        propertyJsonValue: "null"
+      - unionType: NumberSchema
+        ruleType: IsJsonObjectWithPropertyValue
+        propertyName: type
+        propertyJsonType: string
+        propertyJsonValue: number
+      - unionType: ObjectSchema
+        ruleType: IsJsonObjectWithPropertyValue
+        propertyName: type
+        propertyJsonType: string
+        propertyJsonValue: object
+      - unionType: StringSchema
+        ruleType: IsJsonObjectWithPropertyValue
+        propertyName: type
+        propertyJsonType: string
+        propertyJsonValue: string
+      - unionType: TrueSchema
+        ruleType: IsJsonValue
+        propertyJsonType: boolean
+        propertyJsonValue: true
+
+# TODO: Complex root type + unions
+#root:
+#  type: Schema
+
+traits:
+
+  - name: AllOfTrait
+    properties:
+      - name: allOf
+        #type: "[Schema]"
+        type: Schema
+
+  - name: AnyOfTrait
+    properties:
+      - name: anyOf
+        #type: "[Schema]"
+        type: Schema
+
+  - name: ConstTrait
+    properties:
+      - name: const
+        type: any
+
+  - name: DefinitionsTrait
+    properties:
+      - name: $defs
+        type: "[any]"
+
+  - name: ElseTrait
+    properties:
+      - name: else
+        type: Schema
+
+  - name: EnumTrait
+    properties:
+      - name: enum
+        type: "[any]"
+
+  - name: FormatTrait
+    properties:
+      - name: format
+        type: string
+
+  - name: IfTrait
+    properties:
+      - name: if
+        type: Schema
+
+  - name: MetadataTrait
+    transparent: true
+    properties:
+      - name: default
+        type: string
+      - name: deprecated
+        type: boolean
+      - name: description
+        type: string
+      - name: examples
+        type: "[any]"
+      - name: readOnly
+        type: boolean
+      - name: title
+        type: string
+      - name: writeOnly
+        type: boolean
+      - name: $anchor
+        type: string
+      - name: $comment
+        type: string
+      - name: $dynamicAnchor
+        type: string
+
+  - name: NotTrait
+    properties:
+      - name: not
+        type: Schema
+
+  - name: NumericTrait
+    transparent: true
+    properties:
+      - name: exclusiveMaximum
+        type: number
+      - name: exclusiveMinimum
+        type: number
+      - name: maximum
+        type: number
+      - name: minimum
+        type: number
+      - name: multipleOf
+        type: integer
+
+  - name: OneOfTrait
+    properties:
+      - name: oneOf
+        #type: "[Schema]"
+        type: Schema
+
+  - name: ReferenceTrait
+    properties:
+      - name: $dynamicRef
+        type: string
+      - name: $ref
+        type: string
+
+  - name: ThenTrait
+    properties:
+      - name: then
+        type: Schema
+
+entities:
+  # TODO: Union type aliases
+  - name: ArraySchema
+    traits:
+      - AllOfTrait
+      - AnyOfTrait
+      - ConstTrait
+      - DefinitionsTrait
+      - ElseTrait
+      - EnumTrait
+      - IfTrait
+      - MetadataTrait
+      - NotTrait
+      - OneOfTrait
+      - ReferenceTrait
+      - ThenTrait
+    properties:
+      - name: contains
+        type: Schema
+      - name: items
+        type: Schema
+      - name: maxContains
+        type: integer
+      - name: maxItems
+        type: integer
+      - name: minContains
+        type: integer
+      - name: minItems
+        type: integer
+      - name: prefixItems
+        #type: "Schema|[Schema]"
+        type: Schema
+      - name: type
+        type: string # TODO type="array"
+      - name: unevaluatedItems
+        type: Schema
+      - name: uniqueItems
+        type: boolean
+    propertyOrder:
+      - $AllOfTrait
+      - $AnyOfTrait
+      - $ConstTrait
+      - $DefinitionsTrait
+      - $ElseTrait
+      - $EnumTrait
+      - $IfTrait
+      - $MetadataTrait
+      - $NotTrait
+      - $OneOfTrait
+      - $ReferenceTrait
+      - $ThenTrait
+      - $this
+
+  - name: BooleanSchema
+    traits:
+      - AllOfTrait
+      - AnyOfTrait
+      - ConstTrait
+      - DefinitionsTrait
+      - ElseTrait
+      - EnumTrait
+      - IfTrait
+      - MetadataTrait
+      - NotTrait
+      - OneOfTrait
+      - ReferenceTrait
+      - ThenTrait
+    properties:
+      - name: type
+        type: string # TODO type="boolean"
+    propertyOrder:
+      - $AllOfTrait
+      - $AnyOfTrait
+      - $ConstTrait
+      - $DefinitionsTrait
+      - $ElseTrait
+      - $EnumTrait
+      - $IfTrait
+      - $MetadataTrait
+      - $NotTrait
+      - $OneOfTrait
+      - $ReferenceTrait
+      - $ThenTrait
+      - $this
+
+  # F*** THIS
+  - name: ComplexSchema # TODO: How to best support this?
+    properties:
+      - name: type
+        type: "[string]"
+      - name: "*"
+        type: any
+    propertyOrder:
+      - $this
+
+  - name: DocumentTODO
+    root: true # TODO: Support union roots
+    properties:
+      - name: $id
+        type: string
+      - name: $schema
+        type: string
+      - name: __root
+        type: Schema
+    propertyOrder:
+      - $this
+
+  - name: EmptySchema
+    traits:
+      - AllOfTrait
+      - AnyOfTrait
+      - ConstTrait
+      - DefinitionsTrait
+      - ElseTrait
+      - EnumTrait
+      - IfTrait
+      - MetadataTrait
+      - NotTrait
+      - OneOfTrait
+      - ReferenceTrait
+      - ThenTrait
+    properties:
+      - name: type
+        type: string # TODO type IS NOT DEFINED?
+    propertyOrder:
+      - $AllOfTrait
+      - $AnyOfTrait
+      - $ConstTrait
+      - $DefinitionsTrait
+      - $ElseTrait
+      - $EnumTrait
+      - $IfTrait
+      - $MetadataTrait
+      - $NotTrait
+      - $OneOfTrait
+      - $ReferenceTrait
+      - $ThenTrait
+      - $this
+
+  # TODO: This is literally the `false` value
+  # TODO: Support type aliases?
+  - name: FalseSchema
+    traits: [ ]
+    properties:
+      - name: __dummy # TODO: Support empty properties?
+        type: any
+    propertyOrder:
+      - $this
+
+  - name: IntegerSchema
+    traits:
+      - AllOfTrait
+      - AnyOfTrait
+      - ConstTrait
+      - DefinitionsTrait
+      - ElseTrait
+      - EnumTrait
+      - IfTrait
+      - MetadataTrait
+      - NotTrait
+      - NumericTrait
+      - OneOfTrait
+      - ReferenceTrait
+      - ThenTrait
+    properties:
+      - name: type
+        type: string # TODO type="integer"
+    propertyOrder:
+      - $AllOfTrait
+      - $AnyOfTrait
+      - $ConstTrait
+      - $DefinitionsTrait
+      - $ElseTrait
+      - $EnumTrait
+      - $IfTrait
+      - $MetadataTrait
+      - $NotTrait
+      - $NumericTrait
+      - $OneOfTrait
+      - $ReferenceTrait
+      - $ThenTrait
+      - $this
+
+  - name: NullSchema
+    traits:
+      - AllOfTrait
+      - AnyOfTrait
+      - ConstTrait
+      - DefinitionsTrait
+      - ElseTrait
+      - EnumTrait
+      - IfTrait
+      - MetadataTrait
+      - NotTrait
+      - NumericTrait
+      - OneOfTrait
+      - ReferenceTrait
+      - ThenTrait
+    properties:
+      - name: type
+        type: string # TODO type="null"
+    propertyOrder:
+      - $AllOfTrait
+      - $AnyOfTrait
+      - $ConstTrait
+      - $DefinitionsTrait
+      - $ElseTrait
+      - $EnumTrait
+      - $IfTrait
+      - $MetadataTrait
+      - $NotTrait
+      - $NumericTrait
+      - $OneOfTrait
+      - $ReferenceTrait
+      - $ThenTrait
+      - $this
+
+  - name: NumberSchema
+    traits:
+      - AllOfTrait
+      - AnyOfTrait
+      - ConstTrait
+      - DefinitionsTrait
+      - ElseTrait
+      - EnumTrait
+      - IfTrait
+      - MetadataTrait
+      - NotTrait
+      - NumericTrait
+      - OneOfTrait
+      - ReferenceTrait
+      - ThenTrait
+    properties:
+      - name: type
+        type: string # TODO type="number"
+    propertyOrder:
+      - $AllOfTrait
+      - $AnyOfTrait
+      - $ConstTrait
+      - $DefinitionsTrait
+      - $ElseTrait
+      - $EnumTrait
+      - $IfTrait
+      - $MetadataTrait
+      - $NotTrait
+      - $NumericTrait
+      - $OneOfTrait
+      - $ReferenceTrait
+      - $ThenTrait
+      - $this
+
+  - name: ObjectSchema
+    traits:
+      - AllOfTrait
+      - AnyOfTrait
+      - ConstTrait
+      - DefinitionsTrait
+      - ElseTrait
+      - EnumTrait
+      - IfTrait
+      - MetadataTrait
+      - NotTrait
+      - OneOfTrait
+      - ReferenceTrait
+      - ThenTrait
+    properties:
+      - name: additionalProperties
+        #type: "{Schema}"
+        type: Schema
+      - name: dependentRequired
+        type: "{ObjectSchemaDependentRequiredItem}" # FULL: "{[string]}"
+      - name: dependentSchemas
+        #type: "{Schema}"
+        type: Schema
+      - name: maxProperties
+        type: integer
+      - name: minProperties
+        type: integer
+      - name: patternProperties
+        #type: "{Schema}"
+        type: Schema
+      - name: properties
+        #type: "{Schema}"
+        type: Schema
+      - name: propertyNames
+        type: EmptySchema|FalseSchema|StringSchema|TrueSchema
+        unionRules:
+          - unionType: EmptySchema
+            ruleType: IsJsonObjectWithoutPropertyName
+            propertyName: type
+          - unionType: FalseSchema
+            ruleType: IsJsonValue
+            propertyJsonType: boolean
+            propertyJsonValue: false
+          - unionType: StringSchema
+            ruleType: IsJsonObjectWithPropertyValue
+            propertyName: type
+            propertyJsonType: string
+            propertyJsonValue: string
+          - unionType: TrueSchema
+            ruleType: IsJsonValue
+            propertyJsonType: boolean
+            propertyJsonValue: true
+      - name: required
+        type: "[string]"
+      - name: type
+        type: string # TODO type="object"
+      - name: unevaluatedProperties
+        type: Schema
+    propertyOrder:
+      - $AllOfTrait
+      - $AnyOfTrait
+      - $ConstTrait
+      - $DefinitionsTrait
+      - $ElseTrait
+      - $EnumTrait
+      - $IfTrait
+      - $MetadataTrait
+      - $NotTrait
+      - $OneOfTrait
+      - $ReferenceTrait
+      - $ThenTrait
+      - $this
+
+  - name: ObjectSchemaDependentRequiredItem
+    properties:
+      - name: value
+        type: "[string]"
+    propertyOrder:
+      - $this
+
+  - name: StringSchema
+    traits:
+      - AllOfTrait
+      - AnyOfTrait
+      - ConstTrait
+      - DefinitionsTrait
+      - ElseTrait
+      - EnumTrait
+      - FormatTrait
+      - IfTrait
+      - MetadataTrait
+      - NotTrait
+      - OneOfTrait
+      - ReferenceTrait
+      - ThenTrait
+    properties:
+      - name: contentEncoding
+        type: string
+      - name: contentMediaType
+        type: string
+      - name: contentSchema
+        type: string
+      - name: maxLength
+        type: integer
+      - name: minLength
+        type: integer
+      - name: pattern
+        type: string
+      - name: type
+        type: string # TODO type="string"
+    propertyOrder:
+      - $AllOfTrait
+      - $AnyOfTrait
+      - $ConstTrait
+      - $DefinitionsTrait
+      - $ElseTrait
+      - $EnumTrait
+      - $FormatTrait
+      - $IfTrait
+      - $MetadataTrait
+      - $NotTrait
+      - $OneOfTrait
+      - $ReferenceTrait
+      - $ThenTrait
+      - $this
+
+  # If a property type is defined as e.g. `boolean|JsonSchemaNode`; `JsonSchemaNode` can be used instead
+  # TODO: See FalseSchema
+  - name: TrueSchema
+    traits: [ ]
+    properties:
+      - name: __dummy
+        type: any
+    propertyOrder:
+      - $this

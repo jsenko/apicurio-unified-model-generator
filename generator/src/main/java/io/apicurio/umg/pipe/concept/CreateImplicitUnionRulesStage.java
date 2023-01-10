@@ -124,10 +124,10 @@ public class CreateImplicitUnionRulesStage extends AbstractStage {
             rule.setUnionType(entityName);
             rule.setPropertyName(discriminatorPropertyName);
             if ("*".equals(discriminatorPropertyValue)) {
-                rule.setRuleType(UnionRuleType.propertyExists);
+                rule.setRuleType(UnionRuleType.IsJsonObjectWithPropertyName);
             } else {
-                rule.setRuleType(UnionRuleType.propertyValue);
-                rule.setPropertyValue(discriminatorPropertyValue);
+                rule.setRuleType(UnionRuleType.IsJsonObjectWithPropertyValue);
+                rule.setPropertyJsonValue(discriminatorPropertyValue);
             }
             return rule;
         } else if (discriminators.size() > 1) {
@@ -140,7 +140,7 @@ public class CreateImplicitUnionRulesStage extends AbstractStage {
             UnionRule rule = new UnionRule();
             rule.setUnionType(entityName);
             rule.setPropertyName(singleProperty.getName());
-            rule.setRuleType(UnionRuleType.propertyExists);
+            rule.setRuleType(UnionRuleType.IsJsonObjectWithPropertyName);
             return rule;
         }
 

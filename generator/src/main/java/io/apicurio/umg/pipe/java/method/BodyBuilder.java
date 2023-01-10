@@ -55,4 +55,9 @@ public class BodyBuilder {
         return str.toString();
     }
 
+    public static String escapeJavaString(String value) {
+        value = value.replace("\\", "\\\\");
+        value = value.replace("\"", "\\\"");
+        return "\"" + value + "\"";
+    }
 }

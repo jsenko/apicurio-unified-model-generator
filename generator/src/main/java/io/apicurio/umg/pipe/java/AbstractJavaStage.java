@@ -508,6 +508,7 @@ public abstract class AbstractJavaStage extends AbstractStage {
                     importer.addImport(mapType);
                 }
             } else {
+                // TODO: Support list of union
                 throw new UnsupportedOperationException("Java type not supported: " + propertyType);
             }
         }
@@ -574,6 +575,7 @@ public abstract class AbstractJavaStage extends AbstractStage {
         }
     }
 
+    // TODO: Support list of unions
     private static String getUnionTypeName(List<PropertyType> unionNestedTypes) {
         return unionNestedTypes.stream().map(pt -> getTypeName(pt)).reduce((t, u) -> t + u).orElseThrow() + "Union";
     }

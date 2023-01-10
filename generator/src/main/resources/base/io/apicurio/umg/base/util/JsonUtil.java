@@ -1,5 +1,20 @@
 package io.apicurio.umg.base.util;
 
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.util.MinimalPrettyPrinter;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.BooleanNode;
+import com.fasterxml.jackson.databind.node.DoubleNode;
+import com.fasterxml.jackson.databind.node.IntNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.LongNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.TextNode;
+import com.fasterxml.jackson.databind.util.TokenBuffer;
+import org.apache.commons.lang3.StringUtils;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -8,18 +23,10 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.util.MinimalPrettyPrinter;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.databind.node.TextNode;
-import com.fasterxml.jackson.databind.util.TokenBuffer;
 
 public class JsonUtil {
 
@@ -65,6 +72,7 @@ public class JsonUtil {
         }
         return null;
     }
+
     public static ObjectNode consumeObjectProperty(ObjectNode json, String propertyName) {
         if (json.has(propertyName)) {
             ObjectNode rval = getObjectProperty(json, propertyName);
@@ -86,6 +94,7 @@ public class JsonUtil {
         }
         return null;
     }
+
     public static JsonNode consumeAnyProperty(ObjectNode json, String propertyName) {
         if (json.has(propertyName)) {
             JsonNode rval = getAnyProperty(json, propertyName);
@@ -112,6 +121,7 @@ public class JsonUtil {
             return null;
         }
     }
+
     public static List<JsonNode> consumeAnyArrayProperty(ObjectNode json, String propertyName) {
         List<JsonNode> rval = getAnyArrayProperty(json, propertyName);
         if (rval != null) {
@@ -139,6 +149,7 @@ public class JsonUtil {
             return null;
         }
     }
+
     public static List<ObjectNode> consumeObjectArrayProperty(ObjectNode json, String propertyName) {
         List<ObjectNode> rval = getObjectArrayProperty(json, propertyName);
         if (rval != null) {
@@ -164,6 +175,7 @@ public class JsonUtil {
             return null;
         }
     }
+
     public static List<String> consumeStringArrayProperty(ObjectNode json, String propertyName) {
         ObjectNode node = json;
         if (node.has(propertyName)) {
@@ -193,6 +205,7 @@ public class JsonUtil {
             return null;
         }
     }
+
     public static List<Integer> consumeIntegerArrayProperty(ObjectNode json, String propertyName) {
         ObjectNode node = json;
         if (node.has(propertyName)) {
@@ -228,6 +241,7 @@ public class JsonUtil {
             return null;
         }
     }
+
     public static List<Number> consumeNumberArrayProperty(ObjectNode json, String propertyName) {
         ObjectNode node = json;
         if (node.has(propertyName)) {
@@ -237,6 +251,7 @@ public class JsonUtil {
         }
         return null;
     }
+
 
     /* Get/consume an array of booleans property. */
     public static List<Boolean> getBooleanArrayProperty(ObjectNode json, String propertyName) {
@@ -257,6 +272,7 @@ public class JsonUtil {
             return null;
         }
     }
+
     public static List<Boolean> consumeBooleanArrayProperty(ObjectNode json, String propertyName) {
         ObjectNode node = json;
         if (node.has(propertyName)) {
@@ -266,6 +282,7 @@ public class JsonUtil {
         }
         return null;
     }
+
 
     /* Get/Consume a string property. */
     public static String getStringProperty(ObjectNode json, String propertyName) {
@@ -277,6 +294,7 @@ public class JsonUtil {
         }
         return null;
     }
+
     public static String consumeStringProperty(ObjectNode json, String propertyName) {
         if (json.has(propertyName)) {
             String rval = getStringProperty(json, propertyName);
@@ -298,6 +316,7 @@ public class JsonUtil {
         }
         return null;
     }
+
     public static Integer consumeIntegerProperty(ObjectNode json, String propertyName) {
         if (json.has(propertyName)) {
             Integer rval = getIntegerProperty(json, propertyName);
@@ -325,6 +344,7 @@ public class JsonUtil {
         }
         return null;
     }
+
     public static Number consumeNumberProperty(ObjectNode json, String propertyName) {
         if (json.has(propertyName)) {
             Number rval = getNumberProperty(json, propertyName);
@@ -346,6 +366,7 @@ public class JsonUtil {
         }
         return null;
     }
+
     public static Boolean consumeBooleanProperty(ObjectNode json, String propertyName) {
         if (json.has(propertyName)) {
             Boolean rval = getBooleanProperty(json, propertyName);
@@ -375,6 +396,7 @@ public class JsonUtil {
             return null;
         }
     }
+
     public static Map<String, JsonNode> consumeAnyMapProperty(ObjectNode json, String propertyName) {
         Map<String, JsonNode> rval = getAnyMapProperty(json, propertyName);
         if (rval != null) {
@@ -401,6 +423,7 @@ public class JsonUtil {
             return null;
         }
     }
+
     public static Map<String, ObjectNode> consumeObjectMapProperty(ObjectNode json, String propertyName) {
         Map<String, ObjectNode> rval = getObjectMapProperty(json, propertyName);
         if (rval != null) {
@@ -427,6 +450,7 @@ public class JsonUtil {
             return null;
         }
     }
+
     public static Map<String, String> consumeStringMapProperty(ObjectNode json, String propertyName) {
         Map<String, String> rval = getStringMapProperty(json, propertyName);
         if (rval != null) {
@@ -453,6 +477,7 @@ public class JsonUtil {
             return null;
         }
     }
+
     public static Map<String, Integer> consumeIntegerMapProperty(ObjectNode json, String propertyName) {
         Map<String, Integer> rval = getIntegerMapProperty(json, propertyName);
         if (rval != null) {
@@ -479,6 +504,7 @@ public class JsonUtil {
             return null;
         }
     }
+
     public static Map<String, Number> consumeNumberMapProperty(ObjectNode json, String propertyName) {
         Map<String, Number> rval = getNumberMapProperty(json, propertyName);
         if (rval != null) {
@@ -505,6 +531,7 @@ public class JsonUtil {
             return null;
         }
     }
+
     public static Map<String, Boolean> consumeBooleanMapProperty(ObjectNode json, String propertyName) {
         Map<String, Boolean> rval = getBooleanMapProperty(json, propertyName);
         if (rval != null) {
@@ -513,18 +540,21 @@ public class JsonUtil {
         return rval;
     }
 
+
     /* Set a JSON (Object) property. */
     public static void setObjectProperty(ObjectNode json, String propertyName, ObjectNode value) {
         if (value != null) {
             json.set(propertyName, value);
         }
     }
+
     /* Set a JSON (Any) property. */
     public static void setAnyProperty(ObjectNode json, String propertyName, JsonNode value) {
         if (value != null) {
             json.set(propertyName, value);
         }
     }
+
     /* Set an array of anys property. */
     public static void setAnyArrayProperty(ObjectNode json, String propertyName, List<JsonNode> value) {
         if (value != null) {
@@ -533,6 +563,7 @@ public class JsonUtil {
             json.set(propertyName, array);
         }
     }
+
     /* Set an array of objects property. */
     public static void setObjectArrayProperty(ObjectNode json, String propertyName, List<ObjectNode> value) {
         if (value != null) {
@@ -541,6 +572,7 @@ public class JsonUtil {
             json.set(propertyName, array);
         }
     }
+
     /* Set an array of strings property. */
     public static void setStringArrayProperty(ObjectNode json, String propertyName, List<String> value) {
         if (value != null) {
@@ -549,6 +581,7 @@ public class JsonUtil {
             json.set(propertyName, array);
         }
     }
+
     /* Set an array of integers property. */
     public static void setIntegerArrayProperty(ObjectNode json, String propertyName, List<Integer> value) {
         if (value != null) {
@@ -557,6 +590,7 @@ public class JsonUtil {
             json.set(propertyName, array);
         }
     }
+
     /* Set an array of numbers property. */
     public static void setNumberArrayProperty(ObjectNode json, String propertyName, List<Number> value) {
         if (value != null) {
@@ -565,6 +599,7 @@ public class JsonUtil {
             json.set(propertyName, array);
         }
     }
+
     /* Set an array of booleans property. */
     public static void setBooleanArrayProperty(ObjectNode json, String propertyName, List<Boolean> value) {
         if (value != null) {
@@ -573,30 +608,35 @@ public class JsonUtil {
             json.set(propertyName, array);
         }
     }
+
     /* Set a string property. */
     public static void setStringProperty(ObjectNode json, String propertyName, String value) {
         if (value != null) {
             json.set(propertyName, factory.textNode(value));
         }
     }
+
     /* Set an Integer property. */
     public static void setIntegerProperty(ObjectNode json, String propertyName, Integer value) {
         if (value != null) {
             json.set(propertyName, factory.numberNode(value));
         }
     }
+
     /* Set a Number property. */
     public static void setNumberProperty(ObjectNode json, String propertyName, Number value) {
         if (value != null) {
             json.set(propertyName, factory.numberNode(value.doubleValue()));
         }
     }
+
     /* Set a Boolean property. */
     public static void setBooleanProperty(ObjectNode json, String propertyName, Boolean value) {
         if (value != null) {
             json.set(propertyName, factory.booleanNode(value));
         }
     }
+
     /* Set a map of anys property. */
     public static void setAnyMapProperty(ObjectNode json, String propertyName, Map<String, JsonNode> value) {
         if (value != null) {
@@ -607,6 +647,7 @@ public class JsonUtil {
             setProperty(json, propertyName, object);
         }
     }
+
     /* Set a map of objects property. */
     public static void setObjectMapProperty(ObjectNode json, String propertyName, Map<String, ObjectNode> value) {
         if (value != null) {
@@ -617,6 +658,7 @@ public class JsonUtil {
             setProperty(json, propertyName, object);
         }
     }
+
     /* Set a map of strings property. */
     public static void setStringMapProperty(ObjectNode json, String propertyName, Map<String, String> value) {
         if (value != null) {
@@ -627,6 +669,7 @@ public class JsonUtil {
             setProperty(json, propertyName, object);
         }
     }
+
     /* Set a map of integers property. */
     public static void setIntegerMapProperty(ObjectNode json, String propertyName, Map<String, Integer> value) {
         if (value != null) {
@@ -637,6 +680,7 @@ public class JsonUtil {
             setProperty(json, propertyName, object);
         }
     }
+
     /* Set a map of numbers property. */
     public static void setNumberMapProperty(ObjectNode json, String propertyName, Map<String, Number> value) {
         if (value != null) {
@@ -647,6 +691,7 @@ public class JsonUtil {
             setProperty(json, propertyName, object);
         }
     }
+
     /* Set a map of numbers property. */
     public static void setBooleanMapProperty(ObjectNode json, String propertyName, Map<String, Boolean> value) {
         if (value != null) {
@@ -674,6 +719,63 @@ public class JsonUtil {
             throw new RuntimeException(e);
         }
     }
+
+// ====================
+    public static JsonNode parseBoolean(String partialJsonString) {
+        Objects.requireNonNull(partialJsonString);
+        if (StringUtils.equalsIgnoreCase(partialJsonString, "true")) {
+            return BooleanNode.getTrue();
+        } else if (StringUtils.equalsIgnoreCase(partialJsonString, "false")) {
+            return BooleanNode.getFalse();
+        } else {
+            throw new RuntimeException(partialJsonString + " is not a boolean value");
+        }
+    }
+
+    public static JsonNode parseString(String partialJsonString) {
+        Objects.requireNonNull(partialJsonString);
+        return TextNode.valueOf(partialJsonString);
+    }
+
+    public static JsonNode parseNumber(String partialJsonString) {
+        Objects.requireNonNull(partialJsonString);
+        try {
+            var _long = Long.parseLong(partialJsonString);
+            if (_long <= Integer.MAX_VALUE) {
+                return IntNode.valueOf(Integer.parseInt(partialJsonString));
+            }
+            return LongNode.valueOf(_long);
+        } catch (NumberFormatException ex1) {
+            try {
+                var _double = Double.parseDouble(partialJsonString);
+                return DoubleNode.valueOf(_double);
+            } catch (NumberFormatException ex2) {
+                throw new RuntimeException(partialJsonString + " is not a number");
+            }
+        }
+    }
+
+    public static JsonNode parseObject(String partialJsonString) {
+        Objects.requireNonNull(partialJsonString);
+        return parseJSON(partialJsonString);
+    }
+
+    public static JsonNode parseArray(String partialJsonString) {
+        Objects.requireNonNull(partialJsonString);
+        var wrapper = parseJSON("{\"inner\":" + partialJsonString + "}"); // TODO hack
+        var inner = wrapper.required("inner");
+        if (!inner.isArray()) {
+            throw new RuntimeException(partialJsonString + " is not an array");
+        }
+        return inner;
+    }
+
+    public static boolean equals(JsonNode left, JsonNode right) {
+        Objects.requireNonNull(left);
+        Objects.requireNonNull(right);
+        return left.equals(right);
+    }
+// ====================
 
     public static JsonNode clone(JsonNode json) {
         try {
