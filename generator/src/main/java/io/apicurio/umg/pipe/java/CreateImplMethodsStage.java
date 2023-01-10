@@ -15,7 +15,7 @@ import org.jboss.forge.roaster.model.source.MethodSource;
 import io.apicurio.umg.models.concept.EntityModel;
 import io.apicurio.umg.models.concept.PropertyModel;
 import io.apicurio.umg.models.concept.PropertyModelWithOrigin;
-import io.apicurio.umg.models.concept.PropertyType;
+import io.apicurio.umg.models.concept.RawType;
 import io.apicurio.umg.pipe.java.method.BodyBuilder;
 
 /**
@@ -64,20 +64,20 @@ public class CreateImplMethodsStage extends AbstractCreateMethodsStage {
         javaEntity.addImport(ArrayList.class);
 
         if (isPrimitiveList(property)) {
-            Class<?> listType = primitiveTypeToClass(property.getType().getNested().iterator().next());
+            Class<?> listType = primitiveTypeToClass(property.getType().getRawType().getNested().iterator().next());
             javaEntity.addImport(listType);
             mappedNodeType = "List<" + listType.getSimpleName() + ">";
         } else if (isPrimitiveMap(property)) {
-            Class<?> mapType = primitiveTypeToClass(property.getType().getNested().iterator().next());
+            Class<?> mapType = primitiveTypeToClass(property.getType().getRawType().getNested().iterator().next());
             javaEntity.addImport(Map.class);
             javaEntity.addImport(mapType);
             mappedNodeType = "Map<String, " + mapType.getSimpleName() + ">";
         } else if (isPrimitive(property)) {
-            Class<?> primType = primitiveTypeToClass(property.getType());
+            Class<?> primType = primitiveTypeToClass(property.getType().getRawType());
             javaEntity.addImport(primType);
             mappedNodeType = primType.getSimpleName();
         } else if (isEntity(property)) {
-            JavaInterfaceSource entityType = resolveJavaEntityType(propertyWithOrigin.getOrigin().getNamespace().fullName(), property);
+            JavaInterfaceSource entityType = resolveJavaEntityType(propertyWithOrigin.getOrigin().getNn().getNamespace().fullName(), property);
             if (entityType == null) {
                 error("Java interface for entity type not found: " + property.getType());
                 return;
@@ -191,13 +191,13 @@ public class CreateImplMethodsStage extends AbstractCreateMethodsStage {
 
     @Override
     protected void createAddMethodBody(JavaSource<?> javaEntity, PropertyModel property, MethodSource<?> method) {
-        PropertyType type = property.getType().getNested().iterator().next();
+        RawType type = property.getType().getRawType().getNested().iterator().next();
 
         BodyBuilder body = new BodyBuilder();
         body.addContext("fieldName", getFieldName(property));
 
         if (type.isEntityType() || type.isPrimitiveType()) {
-            if (property.getType().isMap()) {
+            if (property.getType().isMapType()) {
                 javaEntity.addImport(LinkedHashMap.class);
                 body.append("if (this.${fieldName} == null) {");
                 body.append("    this.${fieldName} = new LinkedHashMap<>();");
@@ -233,7 +233,7 @@ public class CreateImplMethodsStage extends AbstractCreateMethodsStage {
         body.addContext("fieldName", fieldName);
 
         body.append("if (this.${fieldName} != null) {");
-        if (property.getType().isList()) {
+        if (property.getType().isListType()) {
             body.append("    this.${fieldName}.remove(value);");
         } else {
             body.append("    this.${fieldName}.remove(name);");

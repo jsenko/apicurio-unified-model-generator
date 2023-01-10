@@ -36,7 +36,7 @@ public class NormalizeVisitorsStage extends AbstractStage {
                 // Now pull up each of the entities in the above list
                 entitiesToPullup.forEach(entity -> {
                     branchVisitor.addEntity(entity);
-                    childVisitors.forEach(childVisitor -> childVisitor.removeEntity(entity.getName()));
+                    childVisitors.forEach(childVisitor -> childVisitor.removeEntity(entity.getNn().getName()));
                 });
 
                 // Did we find any entities to pull up?  If yes, increment "changes made".  We're going to keep
@@ -57,7 +57,7 @@ public class NormalizeVisitorsStage extends AbstractStage {
         // has an appropriate namespace set.
         getState().getConceptIndex().findVisitors("").forEach(visitor -> {
             visitor.getEntities().forEach(entity -> {
-                entity.setNamespace(visitor.getNamespace());
+                entity.getNn().setNamespace(visitor.getNamespace());
             });
         });
     }
@@ -86,7 +86,7 @@ public class NormalizeVisitorsStage extends AbstractStage {
      * @param childVisitors
      */
     private boolean existsInAllChildren(EntityModel entity, Collection<VisitorModel> childVisitors) {
-        return childVisitors.stream().map(visitor -> visitor.containsEntity(entity.getName())).reduce(true, (sub, element) -> sub && element);
+        return childVisitors.stream().map(visitor -> visitor.containsEntity(entity.getNn().getName())).reduce(true, (sub, element) -> sub && element);
     }
 
 }

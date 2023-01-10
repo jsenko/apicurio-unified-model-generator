@@ -1,10 +1,11 @@
 package io.apicurio.umg.pipe;
 
-import org.modeshape.common.text.Inflector;
-
 import io.apicurio.umg.logging.Logger;
 import io.apicurio.umg.models.concept.PropertyModel;
+import io.apicurio.umg.models.concept.type.ListType;
+import io.apicurio.umg.models.concept.type.MapType;
 import lombok.Getter;
+import org.modeshape.common.text.Inflector;
 
 /**
  * Base class for all pipeline stages.
@@ -37,11 +38,11 @@ public abstract class AbstractStage implements Stage {
     }
 
     protected boolean isEntityList(PropertyModel property) {
-        return property.getType().isList() && property.getType().getNested().iterator().next().isEntityType();
+        return property.getType().isListType() && ((ListType)property.getType()).getValueType().isEntityType();
     }
 
     protected boolean isEntityMap(PropertyModel property) {
-        return property.getType().isMap() && property.getType().getNested().iterator().next().isEntityType();
+        return property.getType().isMapType() && ((MapType)property.getType()).getValueType().isEntityType();
     }
 
     protected boolean isEntity(PropertyModel property) {
@@ -49,7 +50,7 @@ public abstract class AbstractStage implements Stage {
     }
 
     protected boolean isUnion(PropertyModel property) {
-        return property.getType().isUnion();
+        return property.getType().isUnionType();
     }
 
     protected boolean isPrimitive(PropertyModel property) {
@@ -57,11 +58,11 @@ public abstract class AbstractStage implements Stage {
     }
 
     protected boolean isPrimitiveList(PropertyModel property) {
-        return property.getType().isList() && property.getType().getNested().iterator().next().isPrimitiveType();
+        return property.getType().isListType() && ((ListType)property.getType()).getValueType().isPrimitiveType();
     }
 
     protected boolean isPrimitiveMap(PropertyModel property) {
-        return property.getType().isMap() && property.getType().getNested().iterator().next().isPrimitiveType();
+        return property.getType().isMapType() && ((MapType)property.getType()).getValueType().isPrimitiveType();
     }
 
     protected String singularize(String name) {
@@ -72,20 +73,33 @@ public abstract class AbstractStage implements Stage {
         return propertyName.substring(1, propertyName.length() - 1);
     }
 
-    protected void info(String message, Object ...args) {
+    protected void info(String message, Object... args) {
         Logger.info("[" + getClass().getSimpleName() + "] " + message, args);
     }
 
-    protected void warn(String message, Object ...args) {
+    protected void warn(String message, Object... args) {
         Logger.warn("[" + getClass().getSimpleName() + "] " + message, args);
     }
 
-    protected void debug(String message, Object ...args) {
+    protected void debug(String message, Object... args) {
         Logger.debug("[" + getClass().getSimpleName() + "] " + message, args);
     }
 
-    protected void error(String message, Object ...args) {
+    protected void error(String message, Object... args) {
         Logger.error("[" + getClass().getSimpleName() + "] " + message, args);
     }
 
+    protected void fail(String message, Object... args) {
+        throw new RuntimeException(String.format(message, args));
+    }
+
+    protected void assertion(boolean expression) {
+        assertion(expression, "Assertion failed");
+    }
+
+    protected void assertion(boolean expression, String message, Object... args) {
+        if(!expression) {
+            fail("Assertion failed: " + message, args);
+        }
+    }
 }

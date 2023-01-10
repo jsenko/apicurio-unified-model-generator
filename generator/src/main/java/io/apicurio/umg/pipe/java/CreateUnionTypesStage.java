@@ -1,10 +1,8 @@
 package io.apicurio.umg.pipe.java;
 
+import io.apicurio.umg.pipe.java.type.UnionJavaType;
 import org.jboss.forge.roaster.Roaster;
 import org.jboss.forge.roaster.model.source.JavaInterfaceSource;
-
-import io.apicurio.umg.models.concept.NamespaceModel;
-import io.apicurio.umg.models.concept.PropertyModelWithOrigin;
 
 /**
  * Creates the union type interface.  For example, if the union type is "boolean|[string]" then
@@ -15,22 +13,27 @@ import io.apicurio.umg.models.concept.PropertyModelWithOrigin;
  * interface named "NumberWidgetUnion" will be created to represent that property (the value of
  * which can be either a number or a Widget entity).
  */
-public class CreateUnionTypesStage extends AbstractUnionTypeJavaStage {
+public class CreateUnionTypesStage extends AbstractJavaStage {
+
 
     @Override
-    protected void doProcess(PropertyModelWithOrigin property) {
-        createUnionType(property);
+    protected void doProcess() {
+        //getState().getConceptIndex().getTypes().stream()
+        //        .filter(t -> t.isUnionType())
+        //        .forEach(t -> createUnionType((UnionTypeModel) t));
+        getState().getJavaIndex().getTypeIndex().entrySet().stream()
+                .filter(e -> e.getKey().isUnionType())
+                .forEach(e -> createUnionInterfaceSource((UnionJavaType) e.getValue()));
     }
 
-    /**
-     * @param property
-     */
-    private void createUnionType(PropertyModelWithOrigin property) {
-        debug("Creating union type for: " + property.getProperty().getName());
-        UnionPropertyType unionType = new UnionPropertyType(property.getProperty().getType());
 
-        String name = unionType.getName();
-        String _package = getUnionTypesPackageName();
+    private void createUnionInterfaceSource(UnionJavaType union) {
+        debug("Creating union type for: %s", union);
+        //UnionPropertyType unionType = new UnionPropertyType(property.getProperty().getType().getRawType());
+        //var unionJavaType = new UnionJavaType(union, getState().getConfig().getRootNamespace());
+
+        String name = union.getName();
+        String _package = union.getPackageName();
 
         // Create the main union type interface
         JavaInterfaceSource unionTypeInterface = Roaster.create(JavaInterfaceSource.class)
@@ -38,31 +41,37 @@ public class CreateUnionTypesStage extends AbstractUnionTypeJavaStage {
                 .setName(name)
                 .setPublic();
 
+        union.setInterfaceSource(unionTypeInterface);
+        getState().getJavaIndex().index(unionTypeInterface);
+
         // It must extend the "Union" interface
-        String unionFQN = getUnionInterfaceFQN();
+        String unionFQN = union.getUnionInterfaceFQN();
         JavaInterfaceSource unionValueSource = getState().getJavaIndex().lookupInterface(unionFQN);
         unionTypeInterface.addImport(unionValueSource);
         unionTypeInterface.addInterface(unionValueSource);
 
         // Now create the union methods.
-        createUnionMethods(unionType, unionTypeInterface, property.getOrigin().getNamespace());
-
-        getState().getJavaIndex().index(unionTypeInterface);
+        createUnionMethods(union);
     }
 
-    private void createUnionMethods(UnionPropertyType unionType, JavaInterfaceSource unionTypeInterface, NamespaceModel nsContext) {
-        unionType.getNestedTypes().forEach(nestedType -> {
-            String typeName = getTypeName(nestedType);
+    private void createUnionMethods(UnionJavaType unionJavaType) {
+        unionJavaType.getTypeModel().getTypes().forEach(nestedType -> {
+
+            var javaType = getState().getJavaIndex().lookupType(nestedType);
+
+            String typeName = javaType.getName();//getTypeName(nestedType);
             String isMethodName = "is" + typeName;
             String asMethodName = "as" + typeName;
 
-            JavaType jt = new JavaType(nestedType, nsContext.fullName()).useCommonEntityResolution();
+            //JavaType jt = new JavaType(nestedType, nsContext.fullName()).useCommonEntityResolution();
 
-            String asMethodReturnType = jt.toJavaTypeString();
+            String asMethodReturnType = javaType.toJavaTypeString();//jt.toJavaTypeString();
 
-            unionTypeInterface.addMethod().setName(isMethodName).setReturnType(boolean.class).setPublic();
-            unionTypeInterface.addMethod().setName(asMethodName).setReturnType(asMethodReturnType).setPublic();
-            jt.addImportsTo(unionTypeInterface);
+            unionJavaType.getInterfaceSource().addMethod().setName(isMethodName).setReturnType(boolean.class).setPublic();
+            unionJavaType.getInterfaceSource().addMethod().setName(asMethodName).setReturnType(asMethodReturnType).setPublic();
+            //jt.addImportsTo(unionTypeInterface);
+            javaType.addImportsTo(unionJavaType.getInterfaceSource()); // TODO
+
         });
     }
 }

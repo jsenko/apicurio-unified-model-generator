@@ -66,11 +66,11 @@ public class CreateVisitorInterfacesStage extends AbstractVisitorStage {
      * @param entity
      */
     private void createVisitMethodFor(JavaInterfaceSource visitorInterfaceSource, EntityModel entity) {
-        String visitMethodName = "visit" + entity.getName();
+        String visitMethodName = "visit" + entity.getNn().getName();
 
         JavaInterfaceSource javaEntityModel = findRootJavaEntity(entity);
         if (javaEntityModel == null) {
-            warn("Java entity not found for: " + entity.fullyQualifiedName());
+            warn("Java entity not found for: " + entity.getNn().fullyQualifiedName());
             return;
         }
 

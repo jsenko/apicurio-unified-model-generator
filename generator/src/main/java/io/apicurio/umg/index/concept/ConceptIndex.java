@@ -16,24 +16,17 @@
 
 package io.apicurio.umg.index.concept;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-
+import io.apicurio.umg.models.concept.*;
+import io.apicurio.umg.models.concept.type.Type;
 import org.apache.commons.collections4.Trie;
 import org.apache.commons.collections4.trie.PatriciaTrie;
 
-import io.apicurio.umg.models.concept.EntityModel;
-import io.apicurio.umg.models.concept.NamespaceModel;
-import io.apicurio.umg.models.concept.PropertyModelWithOrigin;
-import io.apicurio.umg.models.concept.PropertyModelWithOriginComparator;
-import io.apicurio.umg.models.concept.TraitModel;
-import io.apicurio.umg.models.concept.VisitorModel;
+import java.util.*;
+import java.util.function.Function;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
+
+import static io.apicurio.umg.models.concept.NamespacedName.nn;
 
 /**
  * @author eric.wittmann@gmail.com
@@ -46,59 +39,12 @@ public class ConceptIndex {
     private Trie<String, VisitorModel> visitorIndex = new PatriciaTrie<>();
     private Map<String, PropertyModelWithOriginComparator> propertyComparatorIndex = new HashMap<>();
 
+    private Map<NamespacedName, Type> typeIndex = new HashMap<>();
 
-    public void remove(TraitModel traitModel) {
-        traitIndex.remove(traitModel.fullyQualifiedName());
-    }
-
-    public void remove(EntityModel entityModel) {
-        entityIndex.remove(entityModel.fullyQualifiedName());
-    }
-
-    public void remove(NamespaceModel namespaceModel) {
-        namespaceIndex.remove(namespaceModel.getName());
-    }
-
-    public void remove(VisitorModel visitorModel) {
-        entityIndex.remove(visitorModel.getNamespace().fullName());
-    }
-
-
-    public boolean hasNamespace(String name) {
-        return namespaceIndex.containsKey(name);
-    }
-
-    public boolean hasTrait(String fullyQualifiedTraitName) {
-        return traitIndex.containsKey(fullyQualifiedTraitName);
-    }
-
-    public boolean hasEntity(String fullyQualifiedEntityName) {
-        return entityIndex.containsKey(fullyQualifiedEntityName);
-    }
-
-    public boolean hasVisitor(String namespace) {
-        return namespaceIndex.containsKey(namespace);
-    }
-
+    // ========= Namespaces
 
     public void index(NamespaceModel model) {
         namespaceIndex.put(model.getName(), model);
-    }
-
-    public void index(TraitModel model) {
-        traitIndex.put(model.fullyQualifiedName(), model);
-    }
-
-    public void index(EntityModel model) {
-        entityIndex.put(model.fullyQualifiedName(), model);
-    }
-
-    public void index(VisitorModel model) {
-        visitorIndex.put(model.getNamespace().fullName(), model);
-    }
-
-    public void index(EntityModel model, PropertyModelWithOriginComparator comparator) {
-        propertyComparatorIndex.put(model.fullyQualifiedName(), comparator);
     }
 
     public NamespaceModel lookupNamespace(String namespace) {
@@ -109,8 +55,18 @@ public class ConceptIndex {
         return namespaceIndex.computeIfAbsent(namespace, (key) -> factory.apply(key));
     }
 
-    public TraitModel lookupTrait(String fullyQualifiedTraitName) {
-        return traitIndex.get(fullyQualifiedTraitName);
+    public Collection<NamespaceModel> findNamespaces(String prefix) {
+        return namespaceIndex.prefixMap(prefix).values();
+    }
+
+    public void remove(NamespaceModel namespaceModel) {
+        namespaceIndex.remove(namespaceModel.getName());
+    }
+
+    // ========= Entities
+
+    public void index(EntityModel model) {
+        entityIndex.put(model.getNn().fullyQualifiedName(), model);
     }
 
     public EntityModel lookupEntity(String fullyQualifiedEntityName) {
@@ -125,12 +81,96 @@ public class ConceptIndex {
         return lookupEntity(namespace.fullName(), entityName);
     }
 
+    /**
+     * Given a starting namespace and an entity name, search up the entity hierarchy for
+     * entities matching the name.  Returns the common-most one.
+     *
+     * @param namespace
+     * @param entityName
+     */
+    public EntityModel lookupCommonEntity(String namespace, String entityName) {
+        NamespaceModel nsModel = lookupNamespace(namespace);
+        EntityModel entity;
+        do {
+            String entityFQN = nsModel.fullName() + "." + entityName;
+            entity = lookupEntity(entityFQN);
+            nsModel = nsModel.getParent();
+        } while (lookupEntity(nsModel, entityName) != null);
+        return entity;
+    }
+
+    public Collection<EntityModel> findEntities(String prefix) {
+        return entityIndex.prefixMap(prefix).values();
+    }
+
+    public void remove(EntityModel entityModel) {
+        entityIndex.remove(entityModel.getNn().fullyQualifiedName());
+    }
+
+    // ========= Traits
+
+    public void index(TraitModel model) {
+        traitIndex.put(model.getNn().fullyQualifiedName(), model);
+    }
+
+    public TraitModel lookupTrait(String fullyQualifiedTraitName) {
+        return traitIndex.get(fullyQualifiedTraitName);
+    }
+
+    public Collection<TraitModel> findTraits(String prefix) {
+        return traitIndex.prefixMap(prefix).values();
+    }
+
+    public void remove(TraitModel traitModel) {
+        traitIndex.remove(traitModel.getNn().fullyQualifiedName());
+    }
+
+    // ========= Types
+
+    public Type lookupOrIndex(String namespace, String name, Supplier<Type> modelSupplier) {
+        // Cannot use computeIfAbsent for recursively
+        Type res = typeIndex.get(nn(lookupNamespace(namespace), name));
+        if(res == null) {
+            res = modelSupplier.get();
+            typeIndex.put(nn(lookupNamespace(namespace), name), res);
+        }
+        return res;
+    }
+
+    public Collection<Type> getTypes() {
+        return typeIndex.values();
+    }
+
+    public void index(Type model) {
+        typeIndex.put(nn(lookupNamespace(model.getContextNamespace()), model.getName()), model);
+    }
+
+    // ========= Visitors
+
+    public void index(VisitorModel model) {
+        visitorIndex.put(model.getNamespace().fullName(), model);
+    }
+
     public VisitorModel lookupVisitor(String namespace) {
         return visitorIndex.get(namespace);
     }
 
+    public Collection<VisitorModel> findVisitors(String prefix) {
+        return visitorIndex.prefixMap(prefix).values();
+    }
+
+    public void remove(VisitorModel visitorModel) {
+        entityIndex.remove(visitorModel.getNamespace().fullName());
+    }
+
+    // ========= Property Comparators
+
+    public void index(EntityModel model, PropertyModelWithOriginComparator comparator) {
+        propertyComparatorIndex.put(model.getNn().fullyQualifiedName(), comparator);
+    }
+
     public PropertyModelWithOriginComparator lookupPropertyComparator(EntityModel entity) {
-        return lookupPropertyComparator(entity.getNamespace(), entity.getName());
+        return lookupPropertyComparator(entity.getNn().getNamespace(), entity.getNn().getName());
     }
 
     public PropertyModelWithOriginComparator lookupPropertyComparator(NamespaceModel namespace, String entityName) {
@@ -142,34 +182,12 @@ public class ConceptIndex {
         return this.propertyComparatorIndex.get(fqn);
     }
 
-
-    public Collection<NamespaceModel> findNamespaces(String prefix) {
-        return namespaceIndex.prefixMap(prefix).values();
-    }
-
-    public Collection<TraitModel> findTraits(String prefix) {
-        return traitIndex.prefixMap(prefix).values();
-    }
-
-    public Collection<EntityModel> findEntities(String prefix) {
-        return entityIndex.prefixMap(prefix).values();
-    }
-
-    public Collection<VisitorModel> findVisitors(String prefix) {
-        return visitorIndex.prefixMap(prefix).values();
-    }
-
-    public Collection<EntityModel> getAllEntitiesWithCopy() {
-        return new HashSet<>(findEntities(""));
-    }
-
-    public Collection<TraitModel> getAllTraitsWithCopy() {
-        return new HashSet<>(findTraits(""));
-    }
+    // ========= Other
 
     /**
      * Gets a list of all properties for the given entity.  This includes any inherited properties and
      * any properties from Traits.
+     *
      * @param entityModel
      */
     public Collection<PropertyModelWithOrigin> getAllEntityProperties(EntityModel entityModel) {
@@ -195,21 +213,5 @@ public class ConceptIndex {
         return models;
     }
 
-    /**
-     * Given a starting namespace and an entity name, search up the entity hierarchy for
-     * entities matching the name.  Returns the common-most one.
-     * @param namespace
-     * @param entityName
-     */
-    public EntityModel lookupCommonEntity(String namespace, String entityName) {
-        NamespaceModel nsModel = lookupNamespace(namespace);
-        EntityModel entity;
-        do {
-            String entityFQN = nsModel.fullName() + "." + entityName;
-            entity = lookupEntity(entityFQN);
-            nsModel = nsModel.getParent();
-        } while (lookupEntity(nsModel, entityName) != null);
-        return entity;
-    }
 
 }

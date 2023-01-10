@@ -1,0 +1,79 @@
+name: Test Schema 1
+version: 1
+versions:
+  - version: 1
+    url: none
+prefix: Test1
+namespace: io.apicurio.datamodels.models.test.v1
+
+typeAliases:
+  - name: Schema
+    type: ArraySchema|ObjectSchema
+    unionRules: # Optional TODO: Verify that the model contains a "type" property.
+      - unionType: ArraySchema
+        ruleType: IsJsonObjectWithPropertyValue
+        propertyName: type
+        propertyJsonType: string
+        propertyJsonValue: array
+      - unionType: ObjectSchema
+        ruleType: IsJsonObjectWithPropertyValue
+        propertyName: type
+        propertyJsonType: string
+        propertyJsonValue: object
+
+# TODO: Complex root type + unions
+#root:
+#  type: Schema
+
+traits:
+
+  - name: MetadataTrait
+    properties:
+      - name: $comment
+        type: string
+
+entities:
+
+  - name: DocumentTODO
+    root: true # TODO: Support union roots
+    properties:
+      - name: __root
+        type: Schema|boolean
+      - name: bar
+        type: FooSchema
+    propertyOrder:
+      - $this
+
+  - name: ArraySchema
+    traits:
+      - MetadataTrait
+    properties:
+      - name: type
+        type: string # type="array"
+      - name: items
+        type: Schema
+    propertyOrder:
+      - $MetadataTrait
+      - $this
+
+  - name: ObjectSchema
+    traits:
+      - MetadataTrait
+    properties:
+      - name: type
+        type: string # type="object"
+      - name: properties
+        type: "{Schema}"
+    propertyOrder:
+      - $MetadataTrait
+      - $this
+
+  - name: FooSchema
+    traits:
+      - MetadataTrait
+    properties:
+      - name: foo
+        type: ArraySchema|[ObjectSchema]
+    propertyOrder:
+      - $MetadataTrait
+      - $this

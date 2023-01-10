@@ -23,8 +23,10 @@ import java.util.HashSet;
 import java.util.Map;
 
 import io.apicurio.umg.beans.Entity;
+import io.apicurio.umg.beans.Property;
 import io.apicurio.umg.beans.SpecificationVersion;
 import io.apicurio.umg.beans.Trait;
+import io.apicurio.umg.models.concept.RawType;
 import io.apicurio.umg.models.concept.SpecificationVersionId;
 import io.apicurio.umg.models.spec.SpecificationModel;
 import lombok.Getter;
@@ -42,12 +44,19 @@ public class SpecificationIndex {
 
     @Getter
     private Map<SpecificationVersionId, SpecificationModel> specIndex = new HashMap<>();
+
     @Getter
     private Map<String, Trait> traitIndex = new HashMap<>();
+
     @Getter
     private Map<String, Entity> entityIndex = new HashMap<>();
+
+    @Getter
+    private Map<String, Property> typeAliasIndex = new HashMap<>();
+
     @Getter
     private Map<String, String> prefixToNS = new HashMap<>();
+
     @Getter
     private Map<String, String> nsToPrefix = new HashMap<>();
 
@@ -62,7 +71,16 @@ public class SpecificationIndex {
             nsToPrefix.put(specVer.getNamespace(), specVer.getPrefix());
             specVer.getTraits().forEach(trait -> indexTrait(specVer, trait));
             specVer.getEntities().forEach(entity -> indexEntity(specVer, entity));
+            specVer.getTypeAliases().forEach(alias -> indexTypeAlias(specVer, alias));
         });
+    }
+
+    public void indexTypeAlias(SpecificationVersion specVersion, Property model) {
+        if(!RawType.parse(model.getName()).isEntityType()) {
+            throw new IllegalStateException("Property alias name must be an 'entity' property type");
+        }
+        String key = specVersion.getNamespace() + "." + model.getName();
+        typeAliasIndex.put(key, model);
     }
 
     public void indexEntity(SpecificationVersion specVersion, Entity model) {

@@ -3,10 +3,7 @@ package io.apicurio.umg.pipe.java;
 import java.io.File;
 import java.io.IOException;
 import java.security.SecureRandom;
-import java.util.Collections;
-import java.util.Random;
-import java.util.Stack;
-import java.util.UUID;
+import java.util.*;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -24,7 +21,7 @@ import io.apicurio.umg.beans.SpecificationVersion;
 import io.apicurio.umg.models.concept.EntityModel;
 import io.apicurio.umg.models.concept.NamespaceModel;
 import io.apicurio.umg.models.concept.PropertyModel;
-import io.apicurio.umg.models.concept.PropertyType;
+import io.apicurio.umg.models.concept.RawType;
 import io.apicurio.umg.pipe.AbstractStage;
 
 public class CreateTestFixturesStage extends AbstractStage {
@@ -66,10 +63,10 @@ public class CreateTestFixturesStage extends AbstractStage {
 
     private ObjectNode generateEntityFixture(EntityModel entity, Stack<String> entityStack) {
         ObjectNode json = objectNode();
-        if (entityStack.search(entity.getName()) != -1) {
+        if (entityStack.search(entity.getNn().getName()) != -1) {
             return json;
         } else {
-            entityStack.push(entity.getName());
+            entityStack.push(entity.getNn().getName());
         }
         getState().getConceptIndex().getAllEntityProperties(entity).forEach(propertyWithOrigin -> {
             PropertyModel property = propertyWithOrigin.getProperty();
@@ -90,15 +87,16 @@ public class CreateTestFixturesStage extends AbstractStage {
     }
 
     private JsonNode generatePropertyValue(EntityModel entity, PropertyModel property, Stack<String> entityStack) {
+        /* TODO
         if (isStarProperty(property)) {
-            PropertyType mappedType = PropertyType.builder()
-                    .nested(Collections.singleton(property.getType()))
+            RawType mappedType = RawType.builder()
+                    .nested(List.of(property.getType().getRawType()))
                     .map(true)
                     .build();
             PropertyModel itemsProperty = PropertyModel.builder().name("_items").type(mappedType).build();
             return generatePropertyValue(entity, itemsProperty, entityStack);
         } else if (isRegexProperty(property)) {
-            PropertyType mappedType = PropertyType.builder()
+            RawType mappedType = RawType.builder()
                     .nested(Collections.singleton(property.getType()))
                     .map(true)
                     .build();
@@ -116,7 +114,7 @@ public class CreateTestFixturesStage extends AbstractStage {
                 return generateEntityFixture(propertyEntity, entityStack);
             }
         } else if (isEntityList(property)) {
-            PropertyType listEntityType = property.getType().getNested().iterator().next();
+            RawType listEntityType = property.getType().getNested().iterator().next();
             EntityModel propertyEntity = resolveEntity(entity.getNamespace(), listEntityType.getSimpleType());
             if (propertyEntity != null) {
                 return generateListValue(() -> {
@@ -125,13 +123,15 @@ public class CreateTestFixturesStage extends AbstractStage {
                 });
             }
         } else if (isEntityMap(property)) {
-            PropertyType mapEntityType = property.getType().getNested().iterator().next();
+            RawType mapEntityType = property.getType().getNested().iterator().next();
             EntityModel propertyEntity = resolveEntity(entity.getNamespace(), mapEntityType.getSimpleType());
             if (propertyEntity != null) {
                 return generateEntityMapValue(property, propertyEntity, entityStack);
             }
         }
         warn("Unhandled property: " + property);
+        return null;
+        */
         return null;
     }
 
@@ -141,6 +141,7 @@ public class CreateTestFixturesStage extends AbstractStage {
     }
 
     private JsonNode generatePrimitiveValue(PropertyModel property) {
+        /* TODO
         switch (property.getType().getSimpleType()) {
             case "string":
                 String val = UUID.randomUUID().toString().substring(10, 18);
@@ -167,17 +168,23 @@ public class CreateTestFixturesStage extends AbstractStage {
         }
         warn("Property type not handled: " + property.getType());
         return null;
+        */
+        return null;
     }
 
     private JsonNode generatePrimitiveListValue(PropertyModel property) {
+        /*TODO
         PropertyModel primitiveProperty = PropertyModel.builder().name("_tmp").type(
-                property.getType().getNested().iterator().next()).build();
+                property.getType().getRawType().getNested().iterator().next()).build();
         return generateListValue(() -> {
             return generatePrimitiveValue(primitiveProperty);
         });
+        */
+        return null;
     }
 
     private JsonNode generatePrimitiveMapValue(PropertyModel property) {
+        /* TODO
         PropertyModel primitiveProperty = PropertyModel.builder().name("_tmp").type(
                 property.getType().getNested().iterator().next()).build();
         if (property.getCollection() != null) {
@@ -192,6 +199,8 @@ public class CreateTestFixturesStage extends AbstractStage {
                 return generatePrimitiveValue(primitiveProperty);
             });
         }
+        */
+        return null;
     }
 
     private JsonNode generateEntityMapValue(PropertyModel property, EntityModel propertyEntity, Stack<String> entityStack) {

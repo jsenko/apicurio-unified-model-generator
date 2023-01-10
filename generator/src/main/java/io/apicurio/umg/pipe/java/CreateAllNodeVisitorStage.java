@@ -45,7 +45,7 @@ public class CreateAllNodeVisitorStage extends AbstractVisitorStage {
 
         // Add "Node" as an import
         String nodeEntityInterfaceFQN = getNodeEntityInterfaceFQN();
-        JavaInterfaceSource nodeEntitySource = lookupJavaEntity(nodeEntityInterfaceFQN);
+        JavaInterfaceSource nodeEntitySource = lookupJavaEntityInterface(nodeEntityInterfaceFQN);
         allNodeVisitorSource.addImport(nodeEntitySource);
 
         // Implement the "CombinedVisitor" interface

@@ -7,6 +7,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import io.apicurio.umg.models.concept.NamespaceModel;
+import io.apicurio.umg.models.concept.NamespacedName;
 import io.apicurio.umg.models.concept.TraitModel;
 import io.apicurio.umg.pipe.AbstractStage;
 
@@ -23,18 +24,17 @@ public class NormalizeTraitsStage extends AbstractStage {
         // might create during processing).
         while (!modelsToProcess.isEmpty()) {
             TraitModel traitModel = modelsToProcess.remove();
-            if (modelsProcessed.contains(traitModel.fullyQualifiedName())) {
+            if (modelsProcessed.contains(traitModel.getNn().fullyQualifiedName())) {
                 continue;
             }
 
             // Check if we need to create a parent trait for this model in any parent scope
-            NamespaceModel ancestorNamespaceModel = traitModel.getNamespace().getParent();
+            NamespaceModel ancestorNamespaceModel = traitModel.getNn().getNamespace().getParent();
             while (ancestorNamespaceModel != null) {
                 if (needsParentTrait(ancestorNamespaceModel, traitModel.getName())) {
                     TraitModel ancestorTrait = TraitModel.builder()
-                            .name(traitModel.getName())
+                            .nn(NamespacedName.nn(ancestorNamespaceModel, traitModel.getName()))
                             .parent(traitModel.getParent())
-                            .namespace(ancestorNamespaceModel)
                             .build();
                     ancestorNamespaceModel.getTraits().put(ancestorTrait.getName(), ancestorTrait);
                     modelsToProcess.add(ancestorTrait);
@@ -45,7 +45,7 @@ public class NormalizeTraitsStage extends AbstractStage {
                     childTraits.forEach(childTrait -> {
                         childTrait.setParent(ancestorTrait);
                         // Skip processing this model if its turn comes up in the queue.
-                        modelsProcessed.add(childTrait.fullyQualifiedName());
+                        modelsProcessed.add(childTrait.getNn().fullyQualifiedName());
                     });
                     // break out of loop - no need to search further up the hierarchy
                     ancestorNamespaceModel = null;

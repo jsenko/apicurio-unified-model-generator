@@ -13,10 +13,14 @@ public abstract class AbstractUnionTypeJavaStage extends AbstractJavaStage {
     protected void doProcess() {
         Set<PropertyModelWithOrigin> unionProperties = new HashSet<>();
         getState().getConceptIndex().findEntities("").stream().filter(entity -> entity.isLeaf()).forEach(entity -> {
+            // For each leaf entity
+            // Collect all properties
             Collection<PropertyModelWithOrigin> allProperties = getState().getConceptIndex().getAllEntityProperties(entity);
+            // Find properties that are unions
             unionProperties.addAll(allProperties.stream().filter(property -> isUnion(property.getProperty())).collect(Collectors.toSet()));
         });
 
+        // i.e. given the entity, collect all union properties
         unionProperties.forEach(property -> {
             doProcess(property);
         });

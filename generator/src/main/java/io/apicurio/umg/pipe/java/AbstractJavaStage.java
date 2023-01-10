@@ -17,7 +17,7 @@ import io.apicurio.umg.models.concept.EntityModel;
 import io.apicurio.umg.models.concept.NamespaceModel;
 import io.apicurio.umg.models.concept.PropertyModel;
 import io.apicurio.umg.models.concept.PropertyModelWithOrigin;
-import io.apicurio.umg.models.concept.PropertyType;
+import io.apicurio.umg.models.concept.RawType;
 import io.apicurio.umg.models.concept.TraitModel;
 import io.apicurio.umg.models.concept.VisitorModel;
 import io.apicurio.umg.pipe.AbstractStage;
@@ -127,30 +127,30 @@ public abstract class AbstractJavaStage extends AbstractStage {
     }
 
     protected String getJavaEntityInterfaceName(EntityModel entity) {
-        String prefix = getState().getSpecIndex().getNsToPrefix().get(entity.getNamespace().fullName());
-        return (prefix == null ? "" : prefix) + entity.getName();
+        String prefix = getState().getSpecIndex().getNsToPrefix().get(entity.getNn().getNamespace().fullName());
+        return (prefix == null ? "" : prefix) + entity.getNn().getName();
     }
 
     protected String getJavaTraitInterfaceName(TraitModel trait) {
-        String prefix = getState().getSpecIndex().getNsToPrefix().get(trait.getNamespace().fullName());
+        String prefix = getState().getSpecIndex().getNsToPrefix().get(trait.getNn().getNamespace().fullName());
         return (prefix == null ? "" : prefix) + trait.getName();
     }
 
     protected String getJavaEntityClassName(EntityModel entity) {
-        String prefix = getState().getSpecIndex().getNsToPrefix().get(entity.getNamespace().fullName());
-        return (prefix == null ? "" : prefix) + entity.getName() + "Impl";
+        String prefix = getState().getSpecIndex().getNsToPrefix().get(entity.getNn().getNamespace().fullName());
+        return (prefix == null ? "" : prefix) + entity.getNn().getName() + "Impl";
     }
 
     protected String getJavaEntityInterfacePackage(EntityModel entity) {
-        return getPackage(entity.getNamespace());
+        return getPackage(entity.getNn().getNamespace());
     }
 
     protected String getJavaTraitInterfacePackage(TraitModel trait) {
-        return getPackage(trait.getNamespace());
+        return getPackage(trait.getNn().getNamespace());
     }
 
     protected String getJavaEntityClassPackage(EntityModel entity) {
-        return getPackage(entity.getNamespace());
+        return getPackage(entity.getNn().getNamespace());
     }
 
     protected String getPackage(NamespaceModel namespace) {
@@ -206,7 +206,7 @@ public abstract class AbstractJavaStage extends AbstractStage {
     }
 
     protected String createMethodName(EntityModel entityModel) {
-        return createMethodName(entityModel.getName());
+        return createMethodName(entityModel.getNn().getName());
     }
 
     protected String createMethodName(PropertyModel propertyModel) {
@@ -218,7 +218,7 @@ public abstract class AbstractJavaStage extends AbstractStage {
     }
 
     protected String addMethodName(EntityModel entityModel) {
-        return addMethodName(entityModel.getName());
+        return addMethodName(entityModel.getNn().getName());
     }
 
     protected String addMethodName(PropertyModel propertyModel) {
@@ -230,7 +230,7 @@ public abstract class AbstractJavaStage extends AbstractStage {
     }
 
     protected String clearMethodName(EntityModel entityModel) {
-        return clearMethodName(entityModel.getName());
+        return clearMethodName(entityModel.getNn().getName());
     }
 
     protected String clearMethodName(PropertyModel propertyModel) {
@@ -242,7 +242,7 @@ public abstract class AbstractJavaStage extends AbstractStage {
     }
 
     protected String removeMethodName(EntityModel entityModel) {
-        return removeMethodName(entityModel.getName());
+        return removeMethodName(entityModel.getNn().getName());
     }
 
     protected String removeMethodName(PropertyModel propertyModel) {
@@ -254,7 +254,7 @@ public abstract class AbstractJavaStage extends AbstractStage {
     }
 
     protected String readMethodName(EntityModel entityModel) {
-        return readMethodName(entityModel.getName());
+        return readMethodName(entityModel.getNn().getName());
     }
 
     protected String readMethodName(String entityName) {
@@ -266,10 +266,10 @@ public abstract class AbstractJavaStage extends AbstractStage {
         if (name.startsWith("/")) {
             name = propertyModel.getCollection();
         }
-        return getterMethodName(name, propertyModel.getType());
+        return getterMethodName(name, propertyModel.getType().getRawType());
     }
 
-    protected String getterMethodName(String propertyName, PropertyType type) {
+    protected String getterMethodName(String propertyName, RawType type) {
         boolean isBool = type.isPrimitiveType() && type.getSimpleType().equals("boolean");
         return (isBool ? "is" : "get") + StringUtils.capitalize(propertyName);
     }
@@ -278,7 +278,7 @@ public abstract class AbstractJavaStage extends AbstractStage {
         return "set" + StringUtils.capitalize(propertyModel.getName());
     }
 
-    protected Class<?> primitiveTypeToClass(PropertyType type) {
+    protected Class<?> primitiveTypeToClass(RawType type) {
         if (!type.isPrimitiveType()) {
             throw new UnsupportedOperationException("Property type not primitive: " + type);
         }
@@ -290,34 +290,34 @@ public abstract class AbstractJavaStage extends AbstractStage {
     }
 
     protected JavaInterfaceSource resolveJavaEntityType(NamespaceModel namespace, PropertyModel property) {
-        return resolveJavaEntityType(namespace.fullName(), property.getType());
+        return resolveJavaEntityType(namespace.fullName(), property.getType().getRawType());
     }
 
     protected JavaInterfaceSource resolveJavaEntityType(String namespace, PropertyModel property) {
-        return resolveJavaEntityType(namespace, property.getType());
+        return resolveJavaEntityType(namespace, property.getType().getRawType());
     }
 
-    protected JavaInterfaceSource resolveJavaEntityType(NamespaceModel namespace, PropertyType type) {
+    protected JavaInterfaceSource resolveJavaEntityType(NamespaceModel namespace, RawType type) {
         return resolveJavaEntity(namespace.fullName(), type.getSimpleType());
     }
 
-    protected JavaInterfaceSource resolveJavaEntityType(String namespace, PropertyType type) {
+    protected JavaInterfaceSource resolveJavaEntityType(String namespace, RawType type) {
         return resolveJavaEntity(namespace, type.getSimpleType());
     }
 
     protected JavaInterfaceSource resolveJavaEntity(EntityModel entityModel) {
-        return resolveJavaEntity(entityModel.getNamespace().fullName(), entityModel.getName());
+        return resolveJavaEntity(entityModel.getNn().getNamespace().fullName(), entityModel.getNn().getName());
     }
 
     protected JavaClassSource resolveJavaEntityImpl(EntityModel entityModel) {
-        return resolveJavaEntityImpl(entityModel.getNamespace().fullName(), entityModel.getName());
+        return resolveJavaEntityImpl(entityModel.getNn().getNamespace().fullName(), entityModel.getNn().getName());
     }
 
     protected JavaInterfaceSource resolveJavaEntity(String namespace, String entityName) {
         String _package = namespace;
         String prefix = getPrefix(namespace);
         String fqn = _package + "." + prefix + entityName;
-        return lookupJavaEntity(fqn);
+        return lookupJavaEntityInterface(fqn);
     }
 
     protected JavaClassSource resolveJavaEntityImpl(String namespace, String entityName) {
@@ -328,17 +328,17 @@ public abstract class AbstractJavaStage extends AbstractStage {
     }
 
     protected JavaInterfaceSource resolveCommonJavaEntity(EntityModel entityModel) {
-        return resolveCommonJavaEntity(entityModel.getNamespace().fullName(), entityModel.getName());
+        return resolveCommonJavaEntity(entityModel.getNn().getNamespace().fullName(), entityModel.getNn().getName());
     }
 
     protected JavaInterfaceSource resolveCommonJavaEntity(NamespaceModel namespace, String entityName) {
         EntityModel commonEntity = getState().getConceptIndex().lookupCommonEntity(namespace.fullName(), entityName);
-        return lookupJavaEntity(commonEntity);
+        return lookupJavaEntityInterface(commonEntity);
     }
 
     protected JavaInterfaceSource resolveCommonJavaEntity(String namespace, String entityName) {
         EntityModel commonEntity = getState().getConceptIndex().lookupCommonEntity(namespace, entityName);
-        return lookupJavaEntity(commonEntity);
+        return lookupJavaEntityInterface(commonEntity);
     }
 
     protected boolean hasNamedMethod(MethodHolderSource<?> entityInterface, String methodName) {
@@ -350,11 +350,11 @@ public abstract class AbstractJavaStage extends AbstractStage {
         return false;
     }
 
-    protected JavaInterfaceSource lookupJavaEntity(EntityModel entity) {
-        return lookupJavaEntity(getJavaEntityInterfaceFQN(entity));
+    protected JavaInterfaceSource lookupJavaEntityInterface(EntityModel entity) {
+        return lookupJavaEntityInterface(getJavaEntityInterfaceFQN(entity));
     }
 
-    protected JavaInterfaceSource lookupJavaEntity(String fullyQualifiedName) {
+    protected JavaInterfaceSource lookupJavaEntityInterface(String fullyQualifiedName) {
         return getState().getJavaIndex().lookupInterface(fullyQualifiedName);
     }
 
@@ -393,21 +393,21 @@ public abstract class AbstractJavaStage extends AbstractStage {
 
 
     public class JavaType {
-        private final PropertyType propertyType;
+        private final RawType propertyType;
         private final String namespaceContext;
         private boolean useCommonEntityResolution;
 
-        public JavaType(PropertyType type, String namespaceContext) {
+        public JavaType(RawType type, String namespaceContext) {
             this.propertyType = type;
             this.namespaceContext = namespaceContext;
         }
 
-        public JavaType(PropertyType type, NamespaceModel namespace) {
+        public JavaType(RawType type, NamespaceModel namespace) {
             this(type, namespace.fullName());
         }
 
         public JavaType(PropertyModelWithOrigin property) {
-            this(property.getProperty().getType(), property.getOrigin().getNamespace());
+            this(property.getProperty().getType().getRawType(), property.getOrigin().getNn().getNamespace());
         }
 
         public JavaType useCommonEntityResolution() {
@@ -447,7 +447,7 @@ public abstract class AbstractJavaStage extends AbstractStage {
             return toClass(propertyType);
         }
 
-        private Class<?> toClass(PropertyType type) {
+        private Class<?> toClass(RawType type) {
             if (!type.isPrimitiveType()) {
                 throw new UnsupportedOperationException("Only allowed for primitive types: " + type);
             }
@@ -462,7 +462,7 @@ public abstract class AbstractJavaStage extends AbstractStage {
             // Handle map of list of primitives.
             if (propertyType.isMap() && propertyType.getNested().iterator().next().isList() &&
                     propertyType.getNested().iterator().next().getNested().iterator().next().isPrimitiveType()) {
-                PropertyType listType = propertyType.getNested().iterator().next().getNested().iterator().next();
+                RawType listType = propertyType.getNested().iterator().next().getNested().iterator().next();
                 Class<?> pType = primitiveTypeToClass(listType);
                 importer.addImport(pType);
                 importer.addImport(List.class);
@@ -508,6 +508,7 @@ public abstract class AbstractJavaStage extends AbstractStage {
                     importer.addImport(mapType);
                 }
             } else {
+                // TODO: Support list of union
                 throw new UnsupportedOperationException("Java type not supported: " + propertyType);
             }
         }
@@ -515,7 +516,7 @@ public abstract class AbstractJavaStage extends AbstractStage {
         public String toJavaTypeString() {
             if (propertyType.isMap() && propertyType.getNested().iterator().next().isList() &&
                     propertyType.getNested().iterator().next().getNested().iterator().next().isPrimitiveType()) {
-                PropertyType listType = propertyType.getNested().iterator().next().getNested().iterator().next();
+                RawType listType = propertyType.getNested().iterator().next().getNested().iterator().next();
                 Class<?> pType = primitiveTypeToClass(listType);
                 return "Map<String, List<" + pType.getSimpleName() + ">>";
             } else if (isPrimitiveList()) {
@@ -560,7 +561,7 @@ public abstract class AbstractJavaStage extends AbstractStage {
         }
     }
 
-    public static String getTypeName(PropertyType type) {
+    public static String getTypeName(RawType type) {
         if (type.isEntityType()) {
             return type.getSimpleType();
         } else if (type.isPrimitiveType()) {
@@ -574,18 +575,19 @@ public abstract class AbstractJavaStage extends AbstractStage {
         }
     }
 
-    private static String getUnionTypeName(List<PropertyType> unionNestedTypes) {
+    // TODO: Support list of unions
+    private static String getUnionTypeName(List<RawType> unionNestedTypes) {
         return unionNestedTypes.stream().map(pt -> getTypeName(pt)).reduce((t, u) -> t + u).orElseThrow() + "Union";
     }
 
     public class UnionPropertyType {
 
-        public UnionPropertyType(PropertyType pType) {
-            List<PropertyType> nt = new ArrayList<>(pType.getNested().size());
+        public UnionPropertyType(RawType pType) {
+            List<RawType> nt = new ArrayList<>(pType.getNested().size());
             nt.addAll(pType.getNested());
-            nt.sort(new Comparator<PropertyType>() {
+            nt.sort(new Comparator<RawType>() {
                 @Override
-                public int compare(PropertyType o1, PropertyType o2) {
+                public int compare(RawType o1, RawType o2) {
                     return o1.toString().compareToIgnoreCase(o2.toString());
                 }
             });
@@ -596,7 +598,7 @@ public abstract class AbstractJavaStage extends AbstractStage {
         }
 
         private final String name;
-        private final List<PropertyType> nestedTypes;
+        private final List<RawType> nestedTypes;
 
         public void addImportsTo(Importer<?> importer) {
             String unionTypeFQN = getUnionTypeFQN(name);
@@ -607,7 +609,7 @@ public abstract class AbstractJavaStage extends AbstractStage {
             return name;
         }
 
-        public List<PropertyType> getNestedTypes() {
+        public List<RawType> getNestedTypes() {
             return nestedTypes;
         }
 

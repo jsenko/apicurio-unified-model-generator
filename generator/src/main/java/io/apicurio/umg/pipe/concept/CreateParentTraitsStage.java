@@ -3,12 +3,9 @@ package io.apicurio.umg.pipe.concept;
 import java.util.LinkedList;
 import java.util.List;
 
+import io.apicurio.umg.models.concept.*;
 import org.apache.commons.lang3.StringUtils;
 
-import io.apicurio.umg.models.concept.EntityModel;
-import io.apicurio.umg.models.concept.PropertyModel;
-import io.apicurio.umg.models.concept.PropertyModelWithOrigin;
-import io.apicurio.umg.models.concept.TraitModel;
 import io.apicurio.umg.pipe.AbstractStage;
 
 /**
@@ -24,25 +21,26 @@ public class CreateParentTraitsStage extends AbstractStage {
 
     @Override
     protected void doProcess() {
+
+        // We need to remove the properties we lifted into the parent trait, so we remember them here
         List<PropertyModelWithOrigin> propertiesToRemove = new LinkedList<>();
 
         getState().getConceptIndex().findEntities("").stream().filter(entity -> entity.isLeaf()).forEach(entity -> {
+            // For each leaf entity, go through all properties, and select a combination where a parent trait is needed
             entity.getProperties().values().stream().filter(property -> needsParent(entity, property)).forEach(property -> {
-                if (!property.getType().isList() && !property.getType().isMap()) {
-                    String propertyTypeName = property.getType().getSimpleType();
+
+                if (!property.getType().isListType() && !property.getType().isMapType()) {
+                    String propertyTypeName = property.getType().getRawType().getSimpleType();
                     String traitName = propertyTypeName + "Parent";
                     TraitModel parentTrait;
-                    if (entity.getNamespace().containsTrait(traitName)) {
-                        parentTrait = entity.getNamespace().getTraits().get(traitName);
+                    if (entity.getNn().getNamespace().containsTrait(traitName)) {
+                        parentTrait = entity.getNn().getNamespace().getTraits().get(traitName);
                     } else {
-                        parentTrait = TraitModel.builder().namespace(entity.getNamespace()).name(traitName).build();
-                        PropertyModel traitProperty = PropertyModel.builder()
-                                .name(property.getName())
-                                .collection(property.getCollection())
-                                .rawType(property.getRawType())
-                                .type(property.getType()).build();
+                        parentTrait = TraitModel.builder().nn(NamespacedName.nn(entity.getNn().getNamespace(), traitName)).build();
+                        // Copy the property
+                        var traitProperty = property.copy();
                         parentTrait.getProperties().put(property.getName(), traitProperty);
-                        entity.getNamespace().getTraits().put(traitName, parentTrait);
+                        entity.getNn().getNamespace().getTraits().put(traitName, parentTrait);
                         getState().getConceptIndex().index(parentTrait);
                     }
                     entity.getTraits().add(parentTrait);
@@ -81,13 +79,13 @@ public class CreateParentTraitsStage extends AbstractStage {
             return false;
         }
         String propertyName = property.getName();
-        String propertyTypeName = property.getType().getSimpleType();
+        String propertyTypeName = property.getType().getRawType().getSimpleType();
         if (!propertyName.equals(StringUtils.capitalize(propertyTypeName))) {
             return false;
         }
         return getState().getConceptIndex().findEntities("")
                 .stream()
-                .filter(e -> !e.getName().equals(entity.getName()))
+                .filter(e -> !e.getNn().getName().equals(entity.getNn().getName()))
                 .filter(e -> e.hasProperty(property.getName()))
                 .filter(e -> e.getProperties().get(property.getName()).equals(property))
                 .count() > 0;

@@ -185,6 +185,14 @@
                             "$ref": "#/components/schemas/Trait"
                         }
                     },
+                    "typeAliases": {
+                        "description": "",
+                        "uniqueItems": true,
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Property"
+                        }
+                    },
                     "namespace": {
                         "description": "",
                         "type": "string"
@@ -298,11 +306,14 @@
             "UnionRuleType": {
                 "description": "",
                 "enum": [
-                    "propertyValue",
-                    "propertyExists"
+                    "IsJsonValue",
+                    "IsJsonObjectWithPropertyName",
+                    "IsJsonObjectWithoutPropertyName",
+                    "IsJsonObjectWithPropertyType",
+                    "IsJsonObjectWithPropertyValue"
                 ],
                 "type": "string",
-                "example": "\"propertyExists\""
+                "example": "\"IsJsonObjectWithPropertyName\""
             },
             "UnionRule": {
                 "title": "Root Type for UnionRule",
@@ -318,7 +329,10 @@
                     "propertyName": {
                         "type": "string"
                     },
-                    "propertyValue": {
+                    "propertyJsonType": {
+                        "type": "string"
+                    },
+                    "propertyJsonValue": {
                         "type": "string"
                     }
                 },

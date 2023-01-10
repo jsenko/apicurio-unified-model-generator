@@ -36,13 +36,13 @@ public class CreateUnionValueMethodsStage extends AbstractJavaStage {
      * @param property
      */
     private void createUnionValueMethods(PropertyModel property, EntityModel origin) {
-        UnionPropertyType unionType = new UnionPropertyType(property.getType());
+        UnionPropertyType unionType = new UnionPropertyType(property.getType().getRawType());
 
         debug("Creating union value methods for property '" + property.getName() + "' of type '"
-                + property.getRawType() +"' on entity: " + origin.fullyQualifiedName());
+                + property.getType().getRawType() +"' on entity: " + origin.getNn().fullyQualifiedName());
 
         unionType.getNestedTypes().forEach(nestedType -> {
-            JavaType nestedJT = new JavaType(nestedType, origin.getNamespace());
+            JavaType nestedJT = new JavaType(nestedType, origin.getNn().getNamespace());
             JavaClassSource unionValueImplSource = null;
             String unionValueTypeName = null;
 
@@ -56,7 +56,7 @@ public class CreateUnionValueMethodsStage extends AbstractJavaStage {
                 unionValueImplSource = getState().getJavaIndex().lookupClass(unionValueImplFQN);
             } else if (nestedJT.isEntity()) {
                 unionValueTypeName = nestedType.getSimpleType();
-                unionValueImplSource = resolveJavaEntityImpl(origin.getNamespace().fullName(), unionValueTypeName);
+                unionValueImplSource = resolveJavaEntityImpl(origin.getNn().getNamespace().fullName(), unionValueTypeName);
             } else if (nestedJT.isEntityList()) {
                 unionValueTypeName = getTypeName(nestedType);
                 String unionValueFQN = getUnionTypeFQN(unionValueTypeName + "UnionValueImpl");
@@ -66,7 +66,7 @@ public class CreateUnionValueMethodsStage extends AbstractJavaStage {
                 throw new RuntimeException("[CreateUnionValueMethodsStage] Union type value not supported: " + nestedType);
             }
 
-            createUnionImplMethods(unionType, unionValueImplSource, unionValueTypeName, nestedJT.isEntity(), origin.getNamespace());
+            createUnionImplMethods(unionType, unionValueImplSource, unionValueTypeName, nestedJT.isEntity(), origin.getNn().getNamespace());
         });
     }
 

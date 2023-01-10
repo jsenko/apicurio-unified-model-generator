@@ -31,9 +31,9 @@ public class ResolveVisitorEntityStage extends AbstractStage {
     }
 
     private EntityModel resolveEntity(VisitorModel visitor, EntityModel entityClone) {
-        EntityModel lookupEntity = getState().getConceptIndex().lookupEntity(visitor.getNamespace(), entityClone.getName());
+        EntityModel lookupEntity = getState().getConceptIndex().lookupEntity(visitor.getNamespace(), entityClone.getNn().getName());
         if (lookupEntity == null) {
-            warn("Failed to resolve visitor entity: " + entityClone.getName() + " from visitor: " + visitor);
+            warn("Failed to resolve visitor entity: " + entityClone.getNn().getName() + " from visitor: " + visitor);
         }
         return lookupEntity;
     }

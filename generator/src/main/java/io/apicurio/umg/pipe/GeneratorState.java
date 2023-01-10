@@ -37,7 +37,7 @@ public class GeneratorState {
      */
     public Collection<TraitModel> findChildTraitsFor(TraitModel parentTrait) {
         String traitName = parentTrait.getName();
-        NamespaceModel parentNamespace = parentTrait.getNamespace();
+        NamespaceModel parentNamespace = parentTrait.getNn().getNamespace();
         List<TraitModel> childTraits = new ArrayList<>();
         for (NamespaceModel namespaceModel : parentNamespace.getChildren().values()) {
             TraitModel childTrait = findChildTraitIn(namespaceModel, traitName);
@@ -55,8 +55,8 @@ public class GeneratorState {
      * @param parentEntity
      */
     public Collection<EntityModel> findChildEntitiesFor(EntityModel parentEntity) {
-        String entityName = parentEntity.getName();
-        NamespaceModel parentNamespace = parentEntity.getNamespace();
+        String entityName = parentEntity.getNn().getName();
+        NamespaceModel parentNamespace = parentEntity.getNn().getNamespace();
         List<EntityModel> childEntities = new ArrayList<>();
         for (NamespaceModel namespaceModel : parentNamespace.getChildren().values()) {
             EntityModel childEntity = findChildEntityIn(namespaceModel, entityName);

@@ -1,13 +1,14 @@
 package io.apicurio.umg.pipe.java;
 
+import io.apicurio.umg.models.concept.NamespaceModel;
+import io.apicurio.umg.models.concept.RawType;
+import io.apicurio.umg.models.concept.type.CollectionType;
+import io.apicurio.umg.models.concept.type.EntityType;
+import io.apicurio.umg.models.concept.type.UnionType;
 import org.jboss.forge.roaster.Roaster;
 import org.jboss.forge.roaster.model.source.JavaClassSource;
 import org.jboss.forge.roaster.model.source.JavaInterfaceSource;
 import org.jboss.forge.roaster.model.source.MethodSource;
-
-import io.apicurio.umg.models.concept.NamespaceModel;
-import io.apicurio.umg.models.concept.PropertyModelWithOrigin;
-import io.apicurio.umg.models.concept.PropertyType;
 
 /**
  * Ensures that any missing union value/wrapper classes are created.  Some of the wrapper classes
@@ -15,45 +16,55 @@ import io.apicurio.umg.models.concept.PropertyType;
  * wrappers must be generated.  This stage does that.  It will potentially result in the generation
  * of new wrapper interfaces and classes (e.g. WidgetListUnionValue and WidgetListUnionValueImpl).
  * These interfaces and classes will be generated in the <em>{rootPackage}.union</em> package.
+ * <p>
+ * If one of the nested type of a union is a collection, it cannot implement a common interface directly.
+ * So we have to create a wrapper. For example:
+ * [Widget] -> WidgetListUnionValue extends EntityUnionValue (manual)
  */
-public class CreateUnionTypeValuesStage extends AbstractUnionTypeJavaStage {
+public class CreateUnionTypeValuesStage extends AbstractJavaStage {
+
 
     @Override
-    protected void doProcess(PropertyModelWithOrigin property) {
-        createMissingUnionValues(property);
+    protected void doProcess() {
+        getState().getConceptIndex().getTypes().stream()
+                .filter(t -> t.isUnionType())
+                .forEach(t -> createMissingUnionValues((UnionType) t));
     }
 
-    /**
-     * @param property
-     */
-    private void createMissingUnionValues(PropertyModelWithOrigin property) {
-        UnionPropertyType unionType = new UnionPropertyType(property.getProperty().getType());
-        unionType.getNestedTypes().forEach(nestedType -> {
-            JavaType nestedJT = new JavaType(nestedType, property.getOrigin().getNamespace());
-            if (nestedJT.isEntityList() || nestedJT.isEntityMap()) {
-                PropertyType entityType = nestedType.getNested().iterator().next();
-                String typeName = getTypeName(entityType);
-                String unionValueName = typeName + "UnionValue";
-                String unionValueFQN = getUnionTypeFQN(unionValueName);
 
-                JavaInterfaceSource entityCollectionUnionValueSource = getState().getJavaIndex().lookupInterface(unionValueFQN);
-                // Make sure to only create the union value/wrapper once.
-                if (entityCollectionUnionValueSource == null) {
-                    createEntityCollectionUnionValue(property.getOrigin().getNamespace(), entityType, nestedJT.isEntityList());
+    private void createMissingUnionValues(UnionType union) {
+        union.getTypes().forEach(nestedType -> {
+            if (nestedType.isCollectionType()) {
+                var collectionType = (CollectionType) nestedType;
+                // If the nested type is a list or map
+                var itemType = collectionType.getValueType();
+                if (itemType.isEntityType()) {
+                    String typeName = getTypeName(itemType.getRawType());
+                    String unionValueName = typeName + "UnionValue";
+                    String unionValueFQN = getUnionTypeFQN(unionValueName);
+
+                    // Make sure to only create the union value/wrapper once.
+                    JavaInterfaceSource entityCollectionUnionValueSource = getState().getJavaIndex().lookupInterface(unionValueFQN);
+                    if (entityCollectionUnionValueSource == null) {
+                        createEntityCollectionUnionValue(((EntityType) itemType).getEntity().getNn().getNamespace(), itemType.getRawType(), nestedType.isListType());
+                    }
+                } else {
+                    fail("This kind of union is not supported: %s", union.getRawType());
                 }
             }
         });
-
     }
+
 
     /**
      * Creates a union value type wrapper interface and impl class for an entity list or map.  This allows
      * a union type to be formed that includes an entity list/map type.
+     *
      * @param namespace
      * @param entityType
      * @param isList
      */
-    private void createEntityCollectionUnionValue(NamespaceModel namespace, PropertyType entityType, boolean isList) {
+    private void createEntityCollectionUnionValue(NamespaceModel namespace, RawType entityType, boolean isList) {
         String typeName = getTypeName(entityType);
         String mapOrList = isList ? "List" : "Map";
         String unionValueName = typeName + mapOrList + "UnionValue";
