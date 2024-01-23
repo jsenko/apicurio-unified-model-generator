@@ -21,9 +21,13 @@ public class PropertyModel {
 
     private String rawType;
 
+    private String aliasedOriginalRawType;
+
     private List<UnionRule> unionRules;
 
     private PropertyType type;
+
+    private PropertyType aliasedOriginalType;
 
     public UnionRule getRuleFor(String rawUnionSubtype) {
         if (unionRules != null) {
