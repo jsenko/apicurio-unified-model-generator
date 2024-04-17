@@ -42,7 +42,14 @@ public enum PrimitiveType implements TypeModel {
     }
 
     @Override
+    public RawType getRawType() {
+        return RawType.parse(rawType);
+    }
+
+    @Override
     public boolean isPrimitiveType() {
         return true;
     }
+
+
 }

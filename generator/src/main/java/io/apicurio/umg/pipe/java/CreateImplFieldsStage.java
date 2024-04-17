@@ -37,6 +37,7 @@ public class CreateImplFieldsStage extends AbstractJavaStage {
     }
 
     private void createEntityImplField(JavaClassSource javaEntityImpl, PropertyModelWithOrigin propertyWithOrigin) {
+        /* TODO
         PropertyModel property = propertyWithOrigin.getProperty();
 
         boolean isStarProperty = false;
@@ -82,5 +83,6 @@ public class CreateImplFieldsStage extends AbstractJavaStage {
             javaEntityImpl.addImport(LinkedHashMap.class);
             field.setLiteralInitializer("new LinkedHashMap<>()");
         }
+        */
     }
 }

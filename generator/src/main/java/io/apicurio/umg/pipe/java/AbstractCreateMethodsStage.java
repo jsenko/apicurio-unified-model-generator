@@ -20,6 +20,7 @@ import io.apicurio.umg.models.concept.RawType;
 public abstract class AbstractCreateMethodsStage extends AbstractJavaStage {
 
     protected void createPropertyMethods(JavaSource<?> javaEntity, PropertyModelWithOrigin propertyWithOrigin) {
+        /* TODO
         PropertyModel property = propertyWithOrigin.getProperty();
         if (property.getName().equals("*")) {
             if (isEntity(property) || isPrimitive(property) || isPrimitiveList(property)) {
@@ -70,6 +71,7 @@ public abstract class AbstractCreateMethodsStage extends AbstractJavaStage {
         } else {
             warn("Failed to create methods (not yet implemented) for property '" + property.getName() + "' of entity: " + javaEntity.getQualifiedName());
         }
+        */
     }
 
     /**
@@ -93,13 +95,13 @@ public abstract class AbstractCreateMethodsStage extends AbstractJavaStage {
         addAnnotations(method);
 
         if (isUnion(property)) {
-            UnionPropertyType ut = new UnionPropertyType(property.getType());
+            UnionPropertyType ut = new UnionPropertyType(property.getType().getRawType());
             ut.addImportsTo(javaEntity);
             method.setReturnType(ut.toJavaTypeString());
         } else {
             String propertyOriginNS = propertyWithOrigin.getOrigin().getNn().getNamespace().fullName();
 
-            JavaType jt = new JavaType(property.getType(), propertyOriginNS);
+            JavaType jt = new JavaType(property.getType().getRawType(), propertyOriginNS);
             jt.addImportsTo(javaEntity);
             method.setReturnType(jt.toJavaTypeString());
         }
@@ -121,11 +123,11 @@ public abstract class AbstractCreateMethodsStage extends AbstractJavaStage {
         addAnnotations(method);
 
         if (isUnion(property)) {
-            UnionPropertyType ut = new UnionPropertyType(property.getType());
+            UnionPropertyType ut = new UnionPropertyType(property.getType().getRawType());
             ut.addImportsTo(javaEntity);
             method.addParameter(ut.toJavaTypeString(), "value");
         } else {
-            JavaType jt = new JavaType(property.getType(), propertyOriginNS);
+            JavaType jt = new JavaType(property.getType().getRawType(), propertyOriginNS);
             jt.addImportsTo(javaEntity);
             method.addParameter(jt.toJavaTypeString(), "value");
         }
@@ -143,7 +145,7 @@ public abstract class AbstractCreateMethodsStage extends AbstractJavaStage {
      */
     protected void createFactoryMethod(JavaSource<?> javaEntity, PropertyModelWithOrigin propertyWithOrigin) {
         PropertyModel property = propertyWithOrigin.getProperty();
-        createFactoryMethod(javaEntity, property.getType());
+        createFactoryMethod(javaEntity, property.getType().getRawType());
     }
     protected void createFactoryMethod(JavaSource<?> javaEntity, RawType propertyType) {
         String _package = javaEntity.getPackage();
@@ -179,8 +181,8 @@ public abstract class AbstractCreateMethodsStage extends AbstractJavaStage {
     protected void createAddMethod(JavaSource<?> javaEntity, PropertyModelWithOrigin propertyWithOrigin) {
         PropertyModel property = propertyWithOrigin.getProperty();
 
-        String _package = propertyWithOrigin.getOrigin().getNamespace().fullName();
-        RawType type = property.getType().getNested().iterator().next();
+        String _package = propertyWithOrigin.getOrigin().getNn().getNamespace().fullName();
+        RawType type = property.getType().getRawType().getNested().iterator().next();
         String methodName = addMethodName(singularize(property.getName()));
         MethodSource<?> method;
 
@@ -195,7 +197,7 @@ public abstract class AbstractCreateMethodsStage extends AbstractJavaStage {
 
             method = ((MethodHolderSource<?>) javaEntity).addMethod().setPublic().setName(methodName).setReturnTypeVoid();
             addAnnotations(method);
-            if (property.getType().isMap()) {
+            if (property.getType().isMapType()) {
                 method.addParameter("String", "name");
             }
             method.addParameter(entityType.getName(), "value");
@@ -205,7 +207,7 @@ public abstract class AbstractCreateMethodsStage extends AbstractJavaStage {
 
             method = ((MethodHolderSource<?>) javaEntity).addMethod().setPublic().setName(methodName).setReturnTypeVoid();
             addAnnotations(method);
-            if (property.getType().isMap()) {
+            if (property.getType().isMapType()) {
                 method.addParameter("String", "name");
             }
             method.addParameter(primitiveType.getSimpleName(), "value");
@@ -245,13 +247,13 @@ public abstract class AbstractCreateMethodsStage extends AbstractJavaStage {
     protected void createRemoveMethod(JavaSource<?> javaEntity, PropertyModelWithOrigin propertyWithOrigin) {
         PropertyModel property = propertyWithOrigin.getProperty();
 
-        String _package = propertyWithOrigin.getOrigin().getNamespace().fullName();
+        String _package = propertyWithOrigin.getOrigin().getNn().getNamespace().fullName();
         String methodName = removeMethodName(singularize(property.getName()));
         MethodSource<?> method = ((MethodHolderSource<?>) javaEntity).addMethod().setPublic().setName(methodName).setReturnTypeVoid();
         addAnnotations(method);
 
-        if (property.getType().isList()) {
-            RawType type = property.getType().getNested().iterator().next();
+        if (property.getType().isListType()) {
+            RawType type = property.getType().getRawType().getNested().iterator().next();
             JavaInterfaceSource entityType = resolveJavaEntityType(_package, type);
             if (entityType == null) {
                 error("Could not resolve entity type: " + _package + "::" + type);
@@ -276,7 +278,7 @@ public abstract class AbstractCreateMethodsStage extends AbstractJavaStage {
      */
     private void createUnionFactoryMethods(JavaSource<?> javaEntity, PropertyModelWithOrigin propertyWithOrigin) {
         PropertyModel property = propertyWithOrigin.getProperty();
-        UnionPropertyType ut = new UnionPropertyType(property.getType());
+        UnionPropertyType ut = new UnionPropertyType(property.getType().getRawType());
         ut.getNestedTypes().forEach(nestedType -> {
             if (nestedType.isEntityType()) {
                 createFactoryMethod(javaEntity, nestedType);

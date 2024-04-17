@@ -233,7 +233,7 @@ public class CreateImplMethodsStage extends AbstractCreateMethodsStage {
         body.addContext("fieldName", fieldName);
 
         body.append("if (this.${fieldName} != null) {");
-        if (property.getType().isList()) {
+        if (property.getType().isListType()) {
             body.append("    this.${fieldName}.remove(value);");
         } else {
             body.append("    this.${fieldName}.remove(name);");

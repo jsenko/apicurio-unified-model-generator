@@ -53,6 +53,7 @@ public class CreateInterfaceMethodsStage extends AbstractCreateMethodsStage {
      */
     @Override
     protected void createMappedNodeMethods(JavaSource<?> javaEntity, PropertyModelWithOrigin propertyWithOrigin) {
+        /* TODO
         PropertyModel property = propertyWithOrigin.getProperty();
 
         String mappedNodeFQN = getMappedNodeInterfaceFQN();
@@ -100,6 +101,7 @@ public class CreateInterfaceMethodsStage extends AbstractCreateMethodsStage {
         }
 
         ((JavaInterfaceSource) javaEntity).addInterface(mappedNodeInterfaceWithType);
+        */
     }
 
     /*

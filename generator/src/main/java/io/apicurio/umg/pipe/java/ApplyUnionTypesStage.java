@@ -25,6 +25,7 @@ public class ApplyUnionTypesStage extends AbstractUnionTypeJavaStage {
      * @param property
      */
     private void applyUnionType(PropertyModelWithOrigin property) {
+        /* TODO
         UnionPropertyType unionType = new UnionPropertyType(property.getProperty().getType());
         String unionTypeFQN = getUnionTypeFQN(unionType.getName());
         JavaInterfaceSource unionTypeSource = getState().getJavaIndex().lookupInterface(unionTypeFQN);
@@ -50,5 +51,6 @@ public class ApplyUnionTypesStage extends AbstractUnionTypeJavaStage {
             unionValueSource.addImport(unionTypeSource);
             unionValueSource.addInterface(unionTypeSource);
         });
+        */
     }
 }

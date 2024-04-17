@@ -27,7 +27,7 @@ public class CreateUnionTypesStage extends AbstractUnionTypeJavaStage {
      */
     private void createUnionType(PropertyModelWithOrigin property) {
         debug("Creating union type for: " + property.getProperty().getName());
-        UnionPropertyType unionType = new UnionPropertyType(property.getProperty().getType());
+        UnionPropertyType unionType = new UnionPropertyType(property.getProperty().getType().getRawType());
 
         String name = unionType.getName();
         String _package = getUnionTypesPackageName();
@@ -45,7 +45,7 @@ public class CreateUnionTypesStage extends AbstractUnionTypeJavaStage {
         unionTypeInterface.addInterface(unionValueSource);
 
         // Now create the union methods.
-        createUnionMethods(unionType, unionTypeInterface, property.getOrigin().getNamespace());
+        createUnionMethods(unionType, unionTypeInterface, property.getOrigin().getNn().getNamespace());
 
         getState().getJavaIndex().index(unionTypeInterface);
     }

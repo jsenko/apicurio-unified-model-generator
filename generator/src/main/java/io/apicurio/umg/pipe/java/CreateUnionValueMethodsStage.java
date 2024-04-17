@@ -36,10 +36,10 @@ public class CreateUnionValueMethodsStage extends AbstractJavaStage {
      * @param property
      */
     private void createUnionValueMethods(PropertyModel property, EntityModel origin) {
-        UnionPropertyType unionType = new UnionPropertyType(property.getType());
+        UnionPropertyType unionType = new UnionPropertyType(property.getType().getRawType());
 
         debug("Creating union value methods for property '" + property.getName() + "' of type '"
-                + property.getRawType() +"' on entity: " + origin.getNn().fullyQualifiedName());
+                + property.getType().getRawType() +"' on entity: " + origin.getNn().fullyQualifiedName());
 
         unionType.getNestedTypes().forEach(nestedType -> {
             JavaType nestedJT = new JavaType(nestedType, origin.getNn().getNamespace());

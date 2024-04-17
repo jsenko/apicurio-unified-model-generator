@@ -18,7 +18,7 @@ public class DebugStage extends AbstractStage {
                 });
             });
             namespace.getEntities().values().forEach(entity -> {
-                debug("    Entity: " + entity.getName());
+                debug("    Entity: " + entity.getNn().getName());
                 entity.getTraits().forEach(trait -> {
                     debug("        Trait: " + trait.getName());
                 });
@@ -27,7 +27,7 @@ public class DebugStage extends AbstractStage {
                 });
             });
             if (namespace.getVisitor() != null) {
-                debug("    Visitor (%d entities): " + namespace.getVisitor().getEntities().stream().map(entity -> entity.getName()).collect(Collectors.toList()),
+                debug("    Visitor (%d entities): " + namespace.getVisitor().getEntities().stream().map(entity -> entity.getNn().getName()).collect(Collectors.toList()),
                         namespace.getVisitor().getEntities().size());
             }
         });

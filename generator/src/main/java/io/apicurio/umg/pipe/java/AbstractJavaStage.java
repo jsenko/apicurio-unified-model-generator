@@ -127,30 +127,30 @@ public abstract class AbstractJavaStage extends AbstractStage {
     }
 
     protected String getJavaEntityInterfaceName(EntityModel entity) {
-        String prefix = getState().getSpecIndex().getNsToPrefix().get(entity.getNamespace().fullName());
-        return (prefix == null ? "" : prefix) + entity.getName();
+        String prefix = getState().getSpecIndex().getNsToPrefix().get(entity.getNn().getNamespace().fullName());
+        return (prefix == null ? "" : prefix) + entity.getNn().getName();
     }
 
     protected String getJavaTraitInterfaceName(TraitModel trait) {
-        String prefix = getState().getSpecIndex().getNsToPrefix().get(trait.getNamespace().fullName());
+        String prefix = getState().getSpecIndex().getNsToPrefix().get(trait.getNn().getNamespace().fullName());
         return (prefix == null ? "" : prefix) + trait.getName();
     }
 
     protected String getJavaEntityClassName(EntityModel entity) {
-        String prefix = getState().getSpecIndex().getNsToPrefix().get(entity.getNamespace().fullName());
-        return (prefix == null ? "" : prefix) + entity.getName() + "Impl";
+        String prefix = getState().getSpecIndex().getNsToPrefix().get(entity.getNn().getNamespace().fullName());
+        return (prefix == null ? "" : prefix) + entity.getNn().getName() + "Impl";
     }
 
     protected String getJavaEntityInterfacePackage(EntityModel entity) {
-        return getPackage(entity.getNamespace());
+        return getPackage(entity.getNn().getNamespace());
     }
 
     protected String getJavaTraitInterfacePackage(TraitModel trait) {
-        return getPackage(trait.getNamespace());
+        return getPackage(trait.getNn().getNamespace());
     }
 
     protected String getJavaEntityClassPackage(EntityModel entity) {
-        return getPackage(entity.getNamespace());
+        return getPackage(entity.getNn().getNamespace());
     }
 
     protected String getPackage(NamespaceModel namespace) {
@@ -206,7 +206,7 @@ public abstract class AbstractJavaStage extends AbstractStage {
     }
 
     protected String createMethodName(EntityModel entityModel) {
-        return createMethodName(entityModel.getName());
+        return createMethodName(entityModel.getNn().getName());
     }
 
     protected String createMethodName(PropertyModel propertyModel) {
@@ -218,7 +218,7 @@ public abstract class AbstractJavaStage extends AbstractStage {
     }
 
     protected String addMethodName(EntityModel entityModel) {
-        return addMethodName(entityModel.getName());
+        return addMethodName(entityModel.getNn().getName());
     }
 
     protected String addMethodName(PropertyModel propertyModel) {
@@ -230,7 +230,7 @@ public abstract class AbstractJavaStage extends AbstractStage {
     }
 
     protected String clearMethodName(EntityModel entityModel) {
-        return clearMethodName(entityModel.getName());
+        return clearMethodName(entityModel.getNn().getName());
     }
 
     protected String clearMethodName(PropertyModel propertyModel) {
@@ -242,7 +242,7 @@ public abstract class AbstractJavaStage extends AbstractStage {
     }
 
     protected String removeMethodName(EntityModel entityModel) {
-        return removeMethodName(entityModel.getName());
+        return removeMethodName(entityModel.getNn().getName());
     }
 
     protected String removeMethodName(PropertyModel propertyModel) {
@@ -254,7 +254,7 @@ public abstract class AbstractJavaStage extends AbstractStage {
     }
 
     protected String readMethodName(EntityModel entityModel) {
-        return readMethodName(entityModel.getName());
+        return readMethodName(entityModel.getNn().getName());
     }
 
     protected String readMethodName(String entityName) {
@@ -266,7 +266,7 @@ public abstract class AbstractJavaStage extends AbstractStage {
         if (name.startsWith("/")) {
             name = propertyModel.getCollection();
         }
-        return getterMethodName(name, propertyModel.getType());
+        return getterMethodName(name, propertyModel.getType().getRawType());
     }
 
     protected String getterMethodName(String propertyName, RawType type) {
