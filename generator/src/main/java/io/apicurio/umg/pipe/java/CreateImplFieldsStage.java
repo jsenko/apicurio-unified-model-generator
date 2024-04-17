@@ -10,7 +10,7 @@ import org.jboss.forge.roaster.model.source.JavaClassSource;
 import io.apicurio.umg.models.concept.EntityModel;
 import io.apicurio.umg.models.concept.PropertyModel;
 import io.apicurio.umg.models.concept.PropertyModelWithOrigin;
-import io.apicurio.umg.models.concept.PropertyType;
+import io.apicurio.umg.models.concept.RawType;
 
 /**
  * Creates the fields for each entity implementation.  This is done by iterating over all leaf entities
@@ -41,7 +41,7 @@ public class CreateImplFieldsStage extends AbstractJavaStage {
 
         boolean isStarProperty = false;
         if (isStarProperty(property)) {
-            PropertyType mappedType = PropertyType.builder()
+            RawType mappedType = RawType.builder()
                     .nested(Collections.singleton(property.getType()))
                     .map(true)
                     .build();
@@ -52,7 +52,7 @@ public class CreateImplFieldsStage extends AbstractJavaStage {
                 error("Regex property defined without a collection name: " + javaEntityImpl.getCanonicalName() + "::" + property);
                 return;
             }
-            PropertyType collectionPropertyType = PropertyType.builder()
+            RawType collectionPropertyType = RawType.builder()
                     .nested(Collections.singleton(property.getType()))
                     .map(true)
                     .build();

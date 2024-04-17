@@ -1,6 +1,7 @@
 package io.apicurio.umg.models.concept;
 
 import io.apicurio.umg.beans.SpecificationVersion;
+import io.apicurio.umg.models.concept.type.TypeModel;
 import io.apicurio.umg.models.spec.SpecificationModel;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -15,7 +16,7 @@ import java.util.*;
 @Setter
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @ToString
-public class EntityModel implements HasNamespacedName, TypeModel, HasProperties {
+public class EntityModel implements HasNamespacedName, HasProperties {
 
     @EqualsAndHashCode.Include
     private final NamespacedName nn;

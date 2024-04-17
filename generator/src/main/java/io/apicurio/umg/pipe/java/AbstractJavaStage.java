@@ -17,7 +17,7 @@ import io.apicurio.umg.models.concept.EntityModel;
 import io.apicurio.umg.models.concept.NamespaceModel;
 import io.apicurio.umg.models.concept.PropertyModel;
 import io.apicurio.umg.models.concept.PropertyModelWithOrigin;
-import io.apicurio.umg.models.concept.PropertyType;
+import io.apicurio.umg.models.concept.RawType;
 import io.apicurio.umg.models.concept.TraitModel;
 import io.apicurio.umg.models.concept.VisitorModel;
 import io.apicurio.umg.pipe.AbstractStage;
@@ -269,7 +269,7 @@ public abstract class AbstractJavaStage extends AbstractStage {
         return getterMethodName(name, propertyModel.getType());
     }
 
-    protected String getterMethodName(String propertyName, PropertyType type) {
+    protected String getterMethodName(String propertyName, RawType type) {
         boolean isBool = type.isPrimitiveType() && type.getSimpleType().equals("boolean");
         return (isBool ? "is" : "get") + StringUtils.capitalize(propertyName);
     }
@@ -278,7 +278,7 @@ public abstract class AbstractJavaStage extends AbstractStage {
         return "set" + StringUtils.capitalize(propertyModel.getName());
     }
 
-    protected Class<?> primitiveTypeToClass(PropertyType type) {
+    protected Class<?> primitiveTypeToClass(RawType type) {
         if (!type.isPrimitiveType()) {
             throw new UnsupportedOperationException("Property type not primitive: " + type);
         }
@@ -297,11 +297,11 @@ public abstract class AbstractJavaStage extends AbstractStage {
         return resolveJavaEntityType(namespace, property.getType());
     }
 
-    protected JavaInterfaceSource resolveJavaEntityType(NamespaceModel namespace, PropertyType type) {
+    protected JavaInterfaceSource resolveJavaEntityType(NamespaceModel namespace, RawType type) {
         return resolveJavaEntity(namespace.fullName(), type.getSimpleType());
     }
 
-    protected JavaInterfaceSource resolveJavaEntityType(String namespace, PropertyType type) {
+    protected JavaInterfaceSource resolveJavaEntityType(String namespace, RawType type) {
         return resolveJavaEntity(namespace, type.getSimpleType());
     }
 
@@ -393,16 +393,16 @@ public abstract class AbstractJavaStage extends AbstractStage {
 
 
     public class JavaType {
-        private final PropertyType propertyType;
+        private final RawType propertyType;
         private final String namespaceContext;
         private boolean useCommonEntityResolution;
 
-        public JavaType(PropertyType type, String namespaceContext) {
+        public JavaType(RawType type, String namespaceContext) {
             this.propertyType = type;
             this.namespaceContext = namespaceContext;
         }
 
-        public JavaType(PropertyType type, NamespaceModel namespace) {
+        public JavaType(RawType type, NamespaceModel namespace) {
             this(type, namespace.fullName());
         }
 
@@ -447,7 +447,7 @@ public abstract class AbstractJavaStage extends AbstractStage {
             return toClass(propertyType);
         }
 
-        private Class<?> toClass(PropertyType type) {
+        private Class<?> toClass(RawType type) {
             if (!type.isPrimitiveType()) {
                 throw new UnsupportedOperationException("Only allowed for primitive types: " + type);
             }
@@ -462,7 +462,7 @@ public abstract class AbstractJavaStage extends AbstractStage {
             // Handle map of list of primitives.
             if (propertyType.isMap() && propertyType.getNested().iterator().next().isList() &&
                     propertyType.getNested().iterator().next().getNested().iterator().next().isPrimitiveType()) {
-                PropertyType listType = propertyType.getNested().iterator().next().getNested().iterator().next();
+                RawType listType = propertyType.getNested().iterator().next().getNested().iterator().next();
                 Class<?> pType = primitiveTypeToClass(listType);
                 importer.addImport(pType);
                 importer.addImport(List.class);
@@ -516,7 +516,7 @@ public abstract class AbstractJavaStage extends AbstractStage {
         public String toJavaTypeString() {
             if (propertyType.isMap() && propertyType.getNested().iterator().next().isList() &&
                     propertyType.getNested().iterator().next().getNested().iterator().next().isPrimitiveType()) {
-                PropertyType listType = propertyType.getNested().iterator().next().getNested().iterator().next();
+                RawType listType = propertyType.getNested().iterator().next().getNested().iterator().next();
                 Class<?> pType = primitiveTypeToClass(listType);
                 return "Map<String, List<" + pType.getSimpleName() + ">>";
             } else if (isPrimitiveList()) {
@@ -561,7 +561,7 @@ public abstract class AbstractJavaStage extends AbstractStage {
         }
     }
 
-    public static String getTypeName(PropertyType type) {
+    public static String getTypeName(RawType type) {
         if (type.isEntityType()) {
             return type.getSimpleType();
         } else if (type.isPrimitiveType()) {
@@ -576,18 +576,18 @@ public abstract class AbstractJavaStage extends AbstractStage {
     }
 
     // TODO: Support list of unions
-    private static String getUnionTypeName(List<PropertyType> unionNestedTypes) {
+    private static String getUnionTypeName(List<RawType> unionNestedTypes) {
         return unionNestedTypes.stream().map(pt -> getTypeName(pt)).reduce((t, u) -> t + u).orElseThrow() + "Union";
     }
 
     public class UnionPropertyType {
 
-        public UnionPropertyType(PropertyType pType) {
-            List<PropertyType> nt = new ArrayList<>(pType.getNested().size());
+        public UnionPropertyType(RawType pType) {
+            List<RawType> nt = new ArrayList<>(pType.getNested().size());
             nt.addAll(pType.getNested());
-            nt.sort(new Comparator<PropertyType>() {
+            nt.sort(new Comparator<RawType>() {
                 @Override
-                public int compare(PropertyType o1, PropertyType o2) {
+                public int compare(RawType o1, RawType o2) {
                     return o1.toString().compareToIgnoreCase(o2.toString());
                 }
             });
@@ -598,7 +598,7 @@ public abstract class AbstractJavaStage extends AbstractStage {
         }
 
         private final String name;
-        private final List<PropertyType> nestedTypes;
+        private final List<RawType> nestedTypes;
 
         public void addImportsTo(Importer<?> importer) {
             String unionTypeFQN = getUnionTypeFQN(name);
@@ -609,7 +609,7 @@ public abstract class AbstractJavaStage extends AbstractStage {
             return name;
         }
 
-        public List<PropertyType> getNestedTypes() {
+        public List<RawType> getNestedTypes() {
             return nestedTypes;
         }
 

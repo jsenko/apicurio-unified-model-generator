@@ -15,7 +15,7 @@ import org.jboss.forge.roaster.model.source.MethodSource;
 import io.apicurio.umg.models.concept.EntityModel;
 import io.apicurio.umg.models.concept.PropertyModel;
 import io.apicurio.umg.models.concept.PropertyModelWithOrigin;
-import io.apicurio.umg.models.concept.PropertyType;
+import io.apicurio.umg.models.concept.RawType;
 import io.apicurio.umg.pipe.java.method.BodyBuilder;
 
 /**
@@ -191,7 +191,7 @@ public class CreateImplMethodsStage extends AbstractCreateMethodsStage {
 
     @Override
     protected void createAddMethodBody(JavaSource<?> javaEntity, PropertyModel property, MethodSource<?> method) {
-        PropertyType type = property.getType().getNested().iterator().next();
+        RawType type = property.getType().getNested().iterator().next();
 
         BodyBuilder body = new BodyBuilder();
         body.addContext("fieldName", getFieldName(property));

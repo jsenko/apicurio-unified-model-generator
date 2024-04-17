@@ -1,8 +1,6 @@
 package io.apicurio.umg.models.concept;
 
-import java.util.List;
-
-import io.apicurio.umg.beans.UnionRule;
+import io.apicurio.umg.models.concept.type.TypeModel;
 import lombok.Builder;
 import lombok.Data;
 
@@ -13,12 +11,20 @@ import lombok.Data;
 @Data
 public class PropertyModel {
 
+    // private Set<HasProperties> origins; TODO?
+
     private String name;
 
+    private TypeModel type;
+
+    /**
+     * If this is a regex property, define the name of a collection that will contain the properties that match the regex.
+     */
     private String collection;
 
-    private String discriminator;
+    private String discriminator; // TODO
 
+    /*
     private String rawType;
 
     private String aliasedOriginalRawType;
@@ -35,4 +41,6 @@ public class PropertyModel {
         }
         return null;
     }
+
+     */
 }

@@ -19,7 +19,7 @@ import io.apicurio.umg.models.concept.EntityModel;
 import io.apicurio.umg.models.concept.NamespaceModel;
 import io.apicurio.umg.models.concept.PropertyModel;
 import io.apicurio.umg.models.concept.PropertyModelWithOrigin;
-import io.apicurio.umg.models.concept.PropertyType;
+import io.apicurio.umg.models.concept.RawType;
 import io.apicurio.umg.pipe.java.method.BodyBuilder;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -369,7 +369,7 @@ public class CreateWritersStage extends AbstractJavaStage {
             body.addContext("propertyName", property.getName());
             body.addContext("getterMethodName", getterMethodName(property));
 
-            PropertyType listValuePropertyType = property.getType().getNested().iterator().next();
+            RawType listValuePropertyType = property.getType().getNested().iterator().next();
             if (listValuePropertyType.isPrimitiveType()) {
                 body.addContext("setPropertyMethodName", determineSetPropertyVariant(property.getType()));
 
@@ -424,7 +424,7 @@ public class CreateWritersStage extends AbstractJavaStage {
             body.addContext("propertyName", property.getName());
             body.addContext("getterMethodName", getterMethodName(property));
 
-            PropertyType mapValuePropertyType = property.getType().getNested().iterator().next();
+            RawType mapValuePropertyType = property.getType().getNested().iterator().next();
             if (mapValuePropertyType.isPrimitiveType()) {
                 body.addContext("setPropertyMethodName", determineSetPropertyVariant(property.getType()));
                 writerClassSource.addImport(List.class);
@@ -523,7 +523,7 @@ public class CreateWritersStage extends AbstractJavaStage {
                         body.append("JsonUtil.setObjectProperty(json, \"${propertyName}\", jsonValue);");
                     }
                 } else if (jt.isEntityList()) {
-                    PropertyType listValuePropertyType = nestedType.getNested().iterator().next();
+                    RawType listValuePropertyType = nestedType.getNested().iterator().next();
                     String entityTypeName = listValuePropertyType.getSimpleType();
                     String fqEntityName = entityModel.getNamespace().fullName() + "." + entityTypeName;
                     EntityModel entityTypeModel = getState().getConceptIndex().lookupEntity(fqEntityName);
@@ -557,7 +557,7 @@ public class CreateWritersStage extends AbstractJavaStage {
                     body.append("    });");
                     body.append("    JsonUtil.setAnyProperty(json, \"${propertyName}\", array);");
                 } else if (jt.isEntityMap()) {
-                    PropertyType mapValuePropertyType = nestedType;
+                    RawType mapValuePropertyType = nestedType;
                     String entityTypeName = mapValuePropertyType.getSimpleType();
                     String fqEntityName = entityModel.getNamespace().fullName() + "." + entityTypeName;
                     EntityModel entityTypeModel = getState().getConceptIndex().lookupEntity(fqEntityName);
@@ -612,7 +612,7 @@ public class CreateWritersStage extends AbstractJavaStage {
          *
          * @param type
          */
-        private String determineSetPropertyVariant(PropertyType type) {
+        private String determineSetPropertyVariant(RawType type) {
             if (type.isPrimitiveType()) {
                 Class<?> _class = primitiveTypeToClass(type);
                 if (ObjectNode.class.equals(_class)) {
@@ -627,7 +627,7 @@ public class CreateWritersStage extends AbstractJavaStage {
             }
 
             if (type.isList()) {
-                PropertyType listType = type.getNested().iterator().next();
+                RawType listType = type.getNested().iterator().next();
                 if (listType.isPrimitiveType()) {
                     Class<?> _class = primitiveTypeToClass(listType);
                     if (ObjectNode.class.equals(_class)) {
@@ -643,7 +643,7 @@ public class CreateWritersStage extends AbstractJavaStage {
             }
 
             if (type.isMap()) {
-                PropertyType mapType = type.getNested().iterator().next();
+                RawType mapType = type.getNested().iterator().next();
                 if (mapType.isPrimitiveType()) {
                     Class<?> _class = primitiveTypeToClass(mapType);
                     if (ObjectNode.class.equals(_class)) {
@@ -668,7 +668,7 @@ public class CreateWritersStage extends AbstractJavaStage {
          *
          * @param type
          */
-        private String determineValueType(PropertyType type) {
+        private String determineValueType(RawType type) {
             if (type.isPrimitiveType()) {
                 Class<?> _class = primitiveTypeToClass(type);
                 if (_class != null) {
@@ -678,7 +678,7 @@ public class CreateWritersStage extends AbstractJavaStage {
             }
 
             if (type.isList()) {
-                PropertyType listType = type.getNested().iterator().next();
+                RawType listType = type.getNested().iterator().next();
                 if (listType.isPrimitiveType()) {
                     Class<?> _class = primitiveTypeToClass(listType);
                     if (_class != null) {
@@ -689,7 +689,7 @@ public class CreateWritersStage extends AbstractJavaStage {
             }
 
             if (type.isMap()) {
-                PropertyType mapType = type.getNested().iterator().next();
+                RawType mapType = type.getNested().iterator().next();
                 if (mapType.isPrimitiveType()) {
                     Class<?> _class = primitiveTypeToClass(mapType);
                     if (_class != null) {

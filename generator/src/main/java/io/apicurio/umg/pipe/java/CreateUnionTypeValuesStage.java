@@ -7,7 +7,7 @@ import org.jboss.forge.roaster.model.source.MethodSource;
 
 import io.apicurio.umg.models.concept.NamespaceModel;
 import io.apicurio.umg.models.concept.PropertyModelWithOrigin;
-import io.apicurio.umg.models.concept.PropertyType;
+import io.apicurio.umg.models.concept.RawType;
 
 /**
  * Ensures that any missing union value/wrapper classes are created.  Some of the wrapper classes
@@ -31,7 +31,7 @@ public class CreateUnionTypeValuesStage extends AbstractUnionTypeJavaStage {
         unionType.getNestedTypes().forEach(nestedType -> {
             JavaType nestedJT = new JavaType(nestedType, property.getOrigin().getNn().getNamespace());
             if (nestedJT.isEntityList() || nestedJT.isEntityMap()) {
-                PropertyType entityType = nestedType.getNested().iterator().next();
+                RawType entityType = nestedType.getNested().iterator().next();
                 String typeName = getTypeName(entityType);
                 String unionValueName = typeName + "UnionValue";
                 String unionValueFQN = getUnionTypeFQN(unionValueName);
@@ -53,7 +53,7 @@ public class CreateUnionTypeValuesStage extends AbstractUnionTypeJavaStage {
      * @param entityType
      * @param isList
      */
-    private void createEntityCollectionUnionValue(NamespaceModel namespace, PropertyType entityType, boolean isList) {
+    private void createEntityCollectionUnionValue(NamespaceModel namespace, RawType entityType, boolean isList) {
         String typeName = getTypeName(entityType);
         String mapOrList = isList ? "List" : "Map";
         String unionValueName = typeName + mapOrList + "UnionValue";

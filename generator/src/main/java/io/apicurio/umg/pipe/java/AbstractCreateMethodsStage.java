@@ -9,7 +9,7 @@ import org.jboss.forge.roaster.model.source.MethodSource;
 
 import io.apicurio.umg.models.concept.PropertyModel;
 import io.apicurio.umg.models.concept.PropertyModelWithOrigin;
-import io.apicurio.umg.models.concept.PropertyType;
+import io.apicurio.umg.models.concept.RawType;
 
 /**
  * Base class for the stages that create methods for entity interfaces and impl classes both.  The
@@ -35,7 +35,7 @@ public abstract class AbstractCreateMethodsStage extends AbstractJavaStage {
                 error("Regex property defined without a collection name: " + javaEntity.getCanonicalName() + "::" + property);
                 return;
             }
-            PropertyType collectionPropertyType = PropertyType.builder()
+            RawType collectionPropertyType = RawType.builder()
                     .nested(Collections.singleton(property.getType()))
                     .map(true)
                     .build();
@@ -144,9 +144,9 @@ public abstract class AbstractCreateMethodsStage extends AbstractJavaStage {
         PropertyModel property = propertyWithOrigin.getProperty();
         createFactoryMethod(javaEntity, property.getType());
     }
-    protected void createFactoryMethod(JavaSource<?> javaEntity, PropertyType propertyType) {
+    protected void createFactoryMethod(JavaSource<?> javaEntity, RawType propertyType) {
         String _package = javaEntity.getPackage();
-        PropertyType type = propertyType;
+        RawType type = propertyType;
         if (type.isMap() || type.isList()) {
             type = type.getNested().iterator().next();
         }
@@ -179,7 +179,7 @@ public abstract class AbstractCreateMethodsStage extends AbstractJavaStage {
         PropertyModel property = propertyWithOrigin.getProperty();
 
         String _package = propertyWithOrigin.getOrigin().getNamespace().fullName();
-        PropertyType type = property.getType().getNested().iterator().next();
+        RawType type = property.getType().getNested().iterator().next();
         String methodName = addMethodName(singularize(property.getName()));
         MethodSource<?> method;
 
@@ -250,7 +250,7 @@ public abstract class AbstractCreateMethodsStage extends AbstractJavaStage {
         addAnnotations(method);
 
         if (property.getType().isList()) {
-            PropertyType type = property.getType().getNested().iterator().next();
+            RawType type = property.getType().getNested().iterator().next();
             JavaInterfaceSource entityType = resolveJavaEntityType(_package, type);
             if (entityType == null) {
                 error("Could not resolve entity type: " + _package + "::" + type);

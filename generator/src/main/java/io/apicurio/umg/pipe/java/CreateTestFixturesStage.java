@@ -24,7 +24,7 @@ import io.apicurio.umg.beans.SpecificationVersion;
 import io.apicurio.umg.models.concept.EntityModel;
 import io.apicurio.umg.models.concept.NamespaceModel;
 import io.apicurio.umg.models.concept.PropertyModel;
-import io.apicurio.umg.models.concept.PropertyType;
+import io.apicurio.umg.models.concept.RawType;
 import io.apicurio.umg.pipe.AbstractStage;
 
 public class CreateTestFixturesStage extends AbstractStage {
@@ -91,14 +91,14 @@ public class CreateTestFixturesStage extends AbstractStage {
 
     private JsonNode generatePropertyValue(EntityModel entity, PropertyModel property, Stack<String> entityStack) {
         if (isStarProperty(property)) {
-            PropertyType mappedType = PropertyType.builder()
+            RawType mappedType = RawType.builder()
                     .nested(Collections.singleton(property.getType()))
                     .map(true)
                     .build();
             PropertyModel itemsProperty = PropertyModel.builder().name("_items").type(mappedType).build();
             return generatePropertyValue(entity, itemsProperty, entityStack);
         } else if (isRegexProperty(property)) {
-            PropertyType mappedType = PropertyType.builder()
+            RawType mappedType = RawType.builder()
                     .nested(Collections.singleton(property.getType()))
                     .map(true)
                     .build();
@@ -116,7 +116,7 @@ public class CreateTestFixturesStage extends AbstractStage {
                 return generateEntityFixture(propertyEntity, entityStack);
             }
         } else if (isEntityList(property)) {
-            PropertyType listEntityType = property.getType().getNested().iterator().next();
+            RawType listEntityType = property.getType().getNested().iterator().next();
             EntityModel propertyEntity = resolveEntity(entity.getNamespace(), listEntityType.getSimpleType());
             if (propertyEntity != null) {
                 return generateListValue(() -> {
@@ -125,7 +125,7 @@ public class CreateTestFixturesStage extends AbstractStage {
                 });
             }
         } else if (isEntityMap(property)) {
-            PropertyType mapEntityType = property.getType().getNested().iterator().next();
+            RawType mapEntityType = property.getType().getNested().iterator().next();
             EntityModel propertyEntity = resolveEntity(entity.getNamespace(), mapEntityType.getSimpleType());
             if (propertyEntity != null) {
                 return generateEntityMapValue(property, propertyEntity, entityStack);

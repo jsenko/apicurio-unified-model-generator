@@ -26,7 +26,7 @@ import io.apicurio.umg.beans.Entity;
 import io.apicurio.umg.beans.Property;
 import io.apicurio.umg.beans.SpecificationVersion;
 import io.apicurio.umg.beans.Trait;
-import io.apicurio.umg.models.concept.PropertyType;
+import io.apicurio.umg.models.concept.RawType;
 import io.apicurio.umg.models.concept.SpecificationVersionId;
 import io.apicurio.umg.models.spec.SpecificationModel;
 import lombok.Getter;
@@ -76,7 +76,7 @@ public class SpecificationIndex {
     }
 
     public void indexTypeAlias(SpecificationVersion specVersion, Property model) {
-        if(!PropertyType.parse(model.getName()).isSimple()) {
+        if(!RawType.parse(model.getName()).isSimple()) {
             throw new IllegalStateException("Property alias name must be a simple property type");
         }
         String key = specVersion.getNamespace() + "." + model.getName();

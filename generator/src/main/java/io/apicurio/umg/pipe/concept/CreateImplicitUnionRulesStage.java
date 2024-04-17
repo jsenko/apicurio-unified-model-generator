@@ -11,7 +11,7 @@ import io.apicurio.umg.models.concept.EntityModel;
 import io.apicurio.umg.models.concept.NamespaceModel;
 import io.apicurio.umg.models.concept.PropertyModel;
 import io.apicurio.umg.models.concept.PropertyModelWithOrigin;
-import io.apicurio.umg.models.concept.PropertyType;
+import io.apicurio.umg.models.concept.RawType;
 import io.apicurio.umg.pipe.AbstractStage;
 
 /**
@@ -51,7 +51,7 @@ public class CreateImplicitUnionRulesStage extends AbstractStage {
         int entityCount = 0;
         int arrayCount = 0;
         int mapCount = 0;
-        for (PropertyType nestedType : property.getType().getNested()) {
+        for (RawType nestedType : property.getType().getNested()) {
             if (nestedType.isMap()) {
                 mapCount++;
             } else if (nestedType.isList()) {
@@ -78,7 +78,7 @@ public class CreateImplicitUnionRulesStage extends AbstractStage {
     private void createImplicitUnionRules(EntityModel entity, PropertyModel property) {
         final int minimumRulesRequired = property.getType().getNested().size() - 1;
         int rulesCreated = 0;
-        for (PropertyType nestedType : property.getType().getNested()) {
+        for (RawType nestedType : property.getType().getNested()) {
             UnionRule rule = createImplicitRuleForEntity(entity.getNn().getNamespace(), nestedType.getSimpleType());
             if (rule != null) {
                 List<UnionRule> unionRules = property.getUnionRules();

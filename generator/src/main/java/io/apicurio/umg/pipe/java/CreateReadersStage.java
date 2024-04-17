@@ -8,7 +8,7 @@ import io.apicurio.umg.models.concept.EntityModel;
 import io.apicurio.umg.models.concept.NamespaceModel;
 import io.apicurio.umg.models.concept.PropertyModel;
 import io.apicurio.umg.models.concept.PropertyModelWithOrigin;
-import io.apicurio.umg.models.concept.PropertyType;
+import io.apicurio.umg.models.concept.RawType;
 import io.apicurio.umg.pipe.java.method.BodyBuilder;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -380,7 +380,7 @@ public class CreateReadersStage extends AbstractJavaStage {
             body.addContext("propertyName", property.getName());
             body.addContext("setterMethodName", setterMethodName(property));
 
-            PropertyType listValuePropertyType = property.getType().getNested().iterator().next();
+            RawType listValuePropertyType = property.getType().getNested().iterator().next();
             if (listValuePropertyType.isPrimitiveType()) {
                 body.addContext("consumeMethodName", determineConsumePropertyVariant(property.getType()));
                 body.addContext("propertyValueJavaType", determineValueType(property.getType()));
@@ -434,7 +434,7 @@ public class CreateReadersStage extends AbstractJavaStage {
             body.addContext("propertyName", property.getName());
             body.addContext("setterMethodName", setterMethodName(property));
 
-            PropertyType mapValuePropertyType = property.getType().getNested().iterator().next();
+            RawType mapValuePropertyType = property.getType().getNested().iterator().next();
             if (mapValuePropertyType.isPrimitiveType()) {
                 body.addContext("consumeMethodName", determineConsumePropertyVariant(property.getType()));
                 body.addContext("propertyValueJavaType", determineValueType(property.getType()));
@@ -504,9 +504,9 @@ public class CreateReadersStage extends AbstractJavaStage {
             // also an opportunity to order any of the checks we might need.  E.g. if we need isString()
             // checks to happen before isNumber() for some reason.  Consider this an area for future
             // improvement.
-            List<PropertyType> sortedNestedTypes = ut.getNestedTypes().stream().sorted(new Comparator<PropertyType>() {
+            List<RawType> sortedNestedTypes = ut.getNestedTypes().stream().sorted(new Comparator<RawType>() {
                 @Override
-                public int compare(PropertyType o1, PropertyType o2) {
+                public int compare(RawType o1, RawType o2) {
                     if (o1.isEntityType() && o2.isEntityType()) {
                         UnionRule rule1 = property.getRuleFor(o1.asRawType());
                         UnionRule rule2 = property.getRuleFor(o2.asRawType());
@@ -528,7 +528,7 @@ public class CreateReadersStage extends AbstractJavaStage {
             // TODO support union rules for non-entity union types (e.g. maps and lists) for currently
             //      unsupported use cases (like '[string]|[number]').
             boolean first = true;
-            for (PropertyType nestedType : sortedNestedTypes) {
+            for (RawType nestedType : sortedNestedTypes) {
                 if (!first) {
                     body.append(" else ");
                 }
@@ -691,7 +691,7 @@ public class CreateReadersStage extends AbstractJavaStage {
                         return;
                     }
 
-                    PropertyType listItemType = nestedType.getNested().iterator().next();
+                    RawType listItemType = nestedType.getNested().iterator().next();
                     String listItemEntityName = entityModel.getNamespace().fullName() + "." + listItemType.getSimpleType();
                     EntityModel listItemEntity = getState().getConceptIndex().lookupEntity(listItemEntityName);
                     if (listItemEntity == null) {
@@ -755,7 +755,7 @@ public class CreateReadersStage extends AbstractJavaStage {
          *
          * @param type
          */
-        private String determineConsumePropertyVariant(PropertyType type) {
+        private String determineConsumePropertyVariant(RawType type) {
             if (type.isEntityType()) {
                 return "consumeObjectProperty";
             }
@@ -774,7 +774,7 @@ public class CreateReadersStage extends AbstractJavaStage {
             }
 
             if (type.isList()) {
-                PropertyType listType = type.getNested().iterator().next();
+                RawType listType = type.getNested().iterator().next();
                 if (listType.isPrimitiveType()) {
                     Class<?> _class = primitiveTypeToClass(listType);
                     if (ObjectNode.class.equals(_class)) {
@@ -790,7 +790,7 @@ public class CreateReadersStage extends AbstractJavaStage {
             }
 
             if (type.isMap()) {
-                PropertyType mapType = type.getNested().iterator().next();
+                RawType mapType = type.getNested().iterator().next();
                 if (mapType.isPrimitiveType()) {
                     Class<?> _class = primitiveTypeToClass(mapType);
                     if (ObjectNode.class.equals(_class)) {
@@ -815,7 +815,7 @@ public class CreateReadersStage extends AbstractJavaStage {
          *
          * @param type
          */
-        private String determineValueType(PropertyType type) {
+        private String determineValueType(RawType type) {
             if (type.isPrimitiveType()) {
                 Class<?> _class = primitiveTypeToClass(type);
                 if (_class != null) {
@@ -825,7 +825,7 @@ public class CreateReadersStage extends AbstractJavaStage {
             }
 
             if (type.isList()) {
-                PropertyType listType = type.getNested().iterator().next();
+                RawType listType = type.getNested().iterator().next();
                 if (listType.isPrimitiveType()) {
                     Class<?> _class = primitiveTypeToClass(listType);
                     if (_class != null) {
@@ -836,7 +836,7 @@ public class CreateReadersStage extends AbstractJavaStage {
             }
 
             if (type.isMap()) {
-                PropertyType mapType = type.getNested().iterator().next();
+                RawType mapType = type.getNested().iterator().next();
                 if (mapType.isPrimitiveType()) {
                     Class<?> _class = primitiveTypeToClass(mapType);
                     if (_class != null) {

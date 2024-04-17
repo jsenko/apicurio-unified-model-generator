@@ -1,10 +1,9 @@
 package io.apicurio.umg.pipe;
 
-import org.modeshape.common.text.Inflector;
-
 import io.apicurio.umg.logging.Logger;
 import io.apicurio.umg.models.concept.PropertyModel;
 import lombok.Getter;
+import org.modeshape.common.text.Inflector;
 
 /**
  * Base class for all pipeline stages.
@@ -72,20 +71,31 @@ public abstract class AbstractStage implements Stage {
         return propertyName.substring(1, propertyName.length() - 1);
     }
 
-    protected void info(String message, Object ...args) {
+    protected void info(String message, Object... args) {
         Logger.info("[" + getClass().getSimpleName() + "] " + message, args);
     }
 
-    protected void warn(String message, Object ...args) {
+    protected void warn(String message, Object... args) {
         Logger.warn("[" + getClass().getSimpleName() + "] " + message, args);
     }
 
-    protected void debug(String message, Object ...args) {
+    protected void debug(String message, Object... args) {
         Logger.debug("[" + getClass().getSimpleName() + "] " + message, args);
     }
 
-    protected void error(String message, Object ...args) {
+    protected void error(String message, Object... args) {
         Logger.error("[" + getClass().getSimpleName() + "] " + message, args);
     }
 
+    protected void fail(String message, Object... args) {
+        throw new RuntimeException(String.format(message, args));
+    }
+
+    protected void assertion(boolean expression) {
+        assertion(expression, "Assertion failed");
+    }
+
+    protected void assertion(boolean expression, String message, Object... args) {
+        fail("Assertion failed: " + message, args);
+    }
 }

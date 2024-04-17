@@ -95,10 +95,4 @@ public class SpecificationValidationStage extends AbstractStage {
             fail(message, args);
         }
     }
-
-    private void fail(String message, Object ... args) {
-        String formattedMsg = String.format(message, args);
-        throw new RuntimeException(formattedMsg);
-    }
-
 }
