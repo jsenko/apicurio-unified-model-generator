@@ -35,4 +35,9 @@ public class UnionTypeModel implements /*HasNamespacedName,*/ TypeModel {
     private List<TypeModel> types;
 
     private List<UnionRule> unionRules;
+
+    @Override
+    public boolean isUnionType() {
+        return true;
+    }
 }

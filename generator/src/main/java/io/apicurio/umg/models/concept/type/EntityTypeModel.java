@@ -24,4 +24,9 @@ public class EntityTypeModel implements TypeModel {
     private RawType rawType;
 
     private EntityModel entity;
+
+    @Override
+    public boolean isEntityType() {
+        return true;
+    }
 }

@@ -1,6 +1,7 @@
 package io.apicurio.umg.pipe.java;
 
 import java.util.Collections;
+import java.util.List;
 
 import org.jboss.forge.roaster.model.source.JavaInterfaceSource;
 import org.jboss.forge.roaster.model.source.JavaSource;
@@ -36,7 +37,7 @@ public abstract class AbstractCreateMethodsStage extends AbstractJavaStage {
                 return;
             }
             RawType collectionPropertyType = RawType.builder()
-                    .nested(Collections.singleton(property.getType()))
+                    .nested(List.of(property.getType().getRawType()))
                     .map(true)
                     .build();
             PropertyModel collectionProperty = PropertyModel.builder().name(property.getCollection()).type(collectionPropertyType).build();

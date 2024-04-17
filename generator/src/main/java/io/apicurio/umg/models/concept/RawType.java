@@ -153,6 +153,7 @@ public class RawType {
     private final List<RawType> nested = new ArrayList<>();
 
     @Builder.Default
+    @Getter
     private String simpleType = "";
 
     @Getter

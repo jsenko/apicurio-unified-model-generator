@@ -129,6 +129,9 @@ public class ConceptIndex {
         return typeIndex.computeIfAbsent(name, _name -> modelSupplier.get());
     }
 
+    public Collection<TypeModel> getTypes() {
+        return typeIndex.values();
+    }
 
     public void index(TypeModel model) {
         typeIndex.put(model.getName(), model);

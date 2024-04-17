@@ -19,4 +19,9 @@ public class ListTypeModel implements TypeModel {
     private String rawType;
 
     private TypeModel valueType;
+
+    @Override
+    public boolean isListType() {
+        return true;
+    }
 }

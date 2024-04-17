@@ -86,7 +86,7 @@ public class NormalizeVisitorsStage extends AbstractStage {
      * @param childVisitors
      */
     private boolean existsInAllChildren(EntityModel entity, Collection<VisitorModel> childVisitors) {
-        return childVisitors.stream().map(visitor -> visitor.containsEntity(entity.getName())).reduce(true, (sub, element) -> sub && element);
+        return childVisitors.stream().map(visitor -> visitor.containsEntity(entity.getNn().getName())).reduce(true, (sub, element) -> sub && element);
     }
 
 }

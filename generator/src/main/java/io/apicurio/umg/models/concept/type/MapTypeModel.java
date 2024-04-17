@@ -22,4 +22,9 @@ public class MapTypeModel implements TypeModel {
     private TypeModel keyType; // TODO This is always a string for now
 
     private TypeModel valueType;
+
+    @Override
+    public boolean isMapType() {
+        return true;
+    }
 }

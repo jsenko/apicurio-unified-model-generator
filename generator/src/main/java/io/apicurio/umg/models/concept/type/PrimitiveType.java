@@ -41,7 +41,8 @@ public enum PrimitiveType implements TypeModel {
         return rawType;
     }
 
-//    public void isPrimitive(RawType rawType) {
-//
-//    }
+    @Override
+    public boolean isPrimitiveType() {
+        return true;
+    }
 }

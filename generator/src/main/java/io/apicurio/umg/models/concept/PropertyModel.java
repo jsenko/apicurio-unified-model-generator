@@ -43,4 +43,13 @@ public class PropertyModel {
     }
 
      */
+
+    public PropertyModel copy() {
+        return PropertyModel.builder()
+                .name(name)
+                .type(type)
+                .collection(collection)
+                .discriminator(discriminator)
+                .build();
+    }
 }

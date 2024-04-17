@@ -12,6 +12,9 @@ import io.apicurio.umg.models.concept.NamespaceModel;
 import io.apicurio.umg.models.concept.PropertyModel;
 import io.apicurio.umg.models.concept.PropertyModelWithOrigin;
 import io.apicurio.umg.models.concept.RawType;
+import io.apicurio.umg.models.concept.type.EntityTypeModel;
+import io.apicurio.umg.models.concept.type.TypeModel;
+import io.apicurio.umg.models.concept.type.UnionTypeModel;
 import io.apicurio.umg.pipe.AbstractStage;
 
 /**
@@ -33,25 +36,20 @@ public class CreateImplicitUnionRulesStage extends AbstractStage {
 
     @Override
     protected void doProcess() {
-        getState().getConceptIndex().findEntities("").forEach(entity -> {
-            entity.getProperties().values().stream()
-            // Only care about properties with union types.
-            .filter(property -> property.getType().isUnion())
-            // Only if the property doesn't already have union rules defined.
-            .filter(property -> property.getUnionRules() == null || property.getUnionRules().isEmpty())
-            // Only if the union type has ambiguity
-            .filter(property -> isUnionAmbiguous(property))
-            .forEach(property -> {
-                createImplicitUnionRules(entity, property);
-            });
-        });
+        getState().getConceptIndex().getTypes().stream()
+                .filter(TypeModel::isUnionType)
+                .map(type -> (UnionTypeModel) type)
+                .filter(type -> type.getUnionRules() == null || type.getUnionRules().isEmpty())
+                .filter(type -> isUnionAmbiguous(type))
+                .forEach(union -> createImplicitUnionRules(union));
     }
 
-    private boolean isUnionAmbiguous(PropertyModel property) {
+
+    private boolean isUnionAmbiguous(UnionTypeModel union) {
         int entityCount = 0;
         int arrayCount = 0;
         int mapCount = 0;
-        for (RawType nestedType : property.getType().getNested()) {
+        for (RawType nestedType : union.getRawType().getNested()) {
             if (nestedType.isMap()) {
                 mapCount++;
             } else if (nestedType.isList()) {
@@ -71,20 +69,19 @@ public class CreateImplicitUnionRulesStage extends AbstractStage {
 
     /**
      * Create implicit union rules for the union type.  This is only called if we actually need it.
-     *
-     * @param entity
-     * @param property
      */
-    private void createImplicitUnionRules(EntityModel entity, PropertyModel property) {
-        final int minimumRulesRequired = property.getType().getNested().size() - 1;
+    private void createImplicitUnionRules(UnionTypeModel union) {
+        final int minimumRulesRequired = union.getTypes().size() - 1;
         int rulesCreated = 0;
-        for (RawType nestedType : property.getType().getNested()) {
-            UnionRule rule = createImplicitRuleForEntity(entity.getNn().getNamespace(), nestedType.getSimpleType());
+        for (TypeModel nestedType : union.getTypes()) {
+            // We only support entity types
+            EntityTypeModel nestedEntityType = (EntityTypeModel) nestedType;
+            UnionRule rule = createImplicitRuleForEntity(nestedEntityType.getEntity().getNn().getNamespace(), nestedType.getRawType().getSimpleType());
             if (rule != null) {
-                List<UnionRule> unionRules = property.getUnionRules();
+                List<UnionRule> unionRules = union.getUnionRules();
                 if (unionRules == null) {
                     unionRules = new ArrayList<>();
-                    property.setUnionRules(unionRules);
+                    union.setUnionRules(unionRules);
                 }
                 unionRules.add(rule);
                 rulesCreated++;
@@ -92,21 +89,18 @@ public class CreateImplicitUnionRulesStage extends AbstractStage {
         }
 
         if (rulesCreated < minimumRulesRequired) {
-            throw new RuntimeException("Failed to create appropriate implicit union rules for property '" + property.getName() + "' of entity: " + entity.getNn().fullyQualifiedName());
+            fail("Failed to create appropriate implicit union rules for union: %s", union);
         }
     }
 
     /**
      * Creates an implicit union rule for the given entity type.  An implicit rule can be determined in
      * one of the following ways:
-     *
+     * <p>
      * 1) The entity definition has a "discriminator" property associated with it.  This tells us the
-     *    property (and optional property value) to use for discrimination.
+     * property (and optional property value) to use for discrimination.
      * 2) The entity definition has only one property.  The existence of that property is used for
-     *    discrimination.
-     *
-     * @param nsContext
-     * @param simpleType
+     * discrimination.
      */
     private UnionRule createImplicitRuleForEntity(NamespaceModel nsContext, String entityName) {
         EntityModel entity = getState().getConceptIndex().lookupEntity(nsContext, entityName);
@@ -147,5 +141,4 @@ public class CreateImplicitUnionRulesStage extends AbstractStage {
         // Return null if we couldn't create an implicit rule.
         return null;
     }
-
 }
