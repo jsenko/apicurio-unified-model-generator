@@ -1,6 +1,5 @@
 package io.apicurio.umg.models.concept.type;
 
-import io.apicurio.umg.models.concept.RawType;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
@@ -10,18 +9,11 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @Getter
 @Setter
-@EqualsAndHashCode(onlyExplicitlyIncluded = true)
-@ToString
-public class MapTypeModel implements TypeModel {
-
-    @EqualsAndHashCode.Include
-    private String name;
-
-    private RawType rawType;
+@EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
+@ToString(callSuper = true)
+public class MapTypeModel extends CollectionTypeModel {
 
     private TypeModel keyType; // TODO This is always a string for now
-
-    private TypeModel valueType;
 
     @Override
     public boolean isMapType() {

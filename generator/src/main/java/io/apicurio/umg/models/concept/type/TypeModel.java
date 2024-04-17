@@ -31,4 +31,8 @@ public interface TypeModel {
     default boolean isUnionType() {
         return false;
     }
+
+    default boolean isCollectionType() {
+        return false;
+    }
 }

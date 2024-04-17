@@ -39,37 +39,7 @@ import io.apicurio.umg.pipe.concept.NormalizeVisitorsStage;
 import io.apicurio.umg.pipe.concept.RemoveTransparentTraitsStage;
 import io.apicurio.umg.pipe.concept.ResolveVisitorEntityStage;
 import io.apicurio.umg.pipe.concept.SpecificationValidationStage;
-import io.apicurio.umg.pipe.java.ApplyUnionTypesStage;
-import io.apicurio.umg.pipe.java.ConfigureInterfaceParentStage;
-import io.apicurio.umg.pipe.java.ConfigureInterfaceTraitsStage;
-import io.apicurio.umg.pipe.java.CreateAcceptMethodStage;
-import io.apicurio.umg.pipe.java.CreateAllNodeVisitorStage;
-import io.apicurio.umg.pipe.java.CreateCombinedVisitorInterfacesStage;
-import io.apicurio.umg.pipe.java.CreateEmptyCloneMethodStage;
-import io.apicurio.umg.pipe.java.CreateEntityImplementationsStage;
-import io.apicurio.umg.pipe.java.CreateEntityInterfacesStage;
-import io.apicurio.umg.pipe.java.CreateImplFieldsStage;
-import io.apicurio.umg.pipe.java.CreateImplMethodsStage;
-import io.apicurio.umg.pipe.java.CreateInterfaceMethodsStage;
-import io.apicurio.umg.pipe.java.CreateModelTypeStage;
-import io.apicurio.umg.pipe.java.CreateReaderDispatchersStage;
-import io.apicurio.umg.pipe.java.CreateReaderFactoryStage;
-import io.apicurio.umg.pipe.java.CreateReadersStage;
-import io.apicurio.umg.pipe.java.CreateTestFixturesStage;
-import io.apicurio.umg.pipe.java.CreateTraitInterfacesStage;
-import io.apicurio.umg.pipe.java.CreateTraversersStage;
-import io.apicurio.umg.pipe.java.CreateUnionTypeValuesStage;
-import io.apicurio.umg.pipe.java.CreateUnionTypesStage;
-import io.apicurio.umg.pipe.java.CreateUnionValueMethodsStage;
-import io.apicurio.umg.pipe.java.CreateVisitorAdaptersStage;
-import io.apicurio.umg.pipe.java.CreateVisitorInterfacesStage;
-import io.apicurio.umg.pipe.java.CreateWriterDispatchersStage;
-import io.apicurio.umg.pipe.java.CreateWriterFactoryStage;
-import io.apicurio.umg.pipe.java.CreateWritersStage;
-import io.apicurio.umg.pipe.java.JavaWriteStage;
-import io.apicurio.umg.pipe.java.LoadBaseClassesStage;
-import io.apicurio.umg.pipe.java.OrganizeImportsStage;
-import io.apicurio.umg.pipe.java.RemoveUnusedImportsStage;
+import io.apicurio.umg.pipe.java.*;
 
 /**
  * @author eric.wittmann@gmail.com
@@ -137,11 +107,11 @@ public class UnifiedModelGenerator {
         pipe.addStage(new CreateTraitInterfacesStage());
         pipe.addStage(new CreateEntityInterfacesStage());
         pipe.addStage(new ConfigureInterfaceParentStage());
-        pipe.addStage(new ConfigureInterfaceTraitsStage());
+        pipe.addStage(new AddTraitInterfaceToEntityStage());
 
         pipe.addStage(new CreateUnionTypeValuesStage());
-        pipe.addStage(new CreateUnionTypesStage());
-        pipe.addStage(new ApplyUnionTypesStage());
+        //pipe.addStage(new CreateUnionTypesStage());
+        //pipe.addStage(new ApplyUnionTypesStage());
         /* TODO
         pipe.addStage(new CreateInterfaceMethodsStage());
         pipe.addStage(new CreateEntityImplementationsStage());

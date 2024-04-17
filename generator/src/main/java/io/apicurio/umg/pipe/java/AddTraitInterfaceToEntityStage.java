@@ -9,7 +9,7 @@ import io.apicurio.umg.models.concept.EntityModel;
  *
  * @author eric.wittmann@gmail.com
  */
-public class ConfigureInterfaceTraitsStage extends AbstractJavaStage {
+public class AddTraitInterfaceToEntityStage extends AbstractJavaStage {
 
     @Override
     protected void doProcess() {

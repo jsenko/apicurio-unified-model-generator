@@ -39,6 +39,8 @@ entities:
     properties:
       - name: __root
         type: Schema|boolean
+      - name: bar
+        type: FooSchema
     propertyOrder:
       - $this
 
@@ -62,6 +64,16 @@ entities:
         type: string # type="object"
       - name: properties
         type: "{Schema}"
+    propertyOrder:
+      - $MetadataTrait
+      - $this
+
+  - name: FooSchema
+    traits:
+      - MetadataTrait
+    properties:
+      - name: foo
+        type: ArraySchema|[ObjectSchema]
     propertyOrder:
       - $MetadataTrait
       - $this
