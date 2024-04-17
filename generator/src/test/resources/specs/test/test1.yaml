@@ -9,7 +9,7 @@ namespace: io.apicurio.datamodels.models.test.v1
 typeAliases:
   - name: Schema
     type: ArraySchema|ObjectSchema
-    unionRules:
+    unionRules: # Optional TODO: Verify that the model contains a "type" property.
       - unionType: ArraySchema
         ruleType: IsJsonObjectWithPropertyValue
         propertyName: type
@@ -28,84 +28,40 @@ typeAliases:
 traits:
 
   - name: MetadataTrait
-    #transparent: true
     properties:
       - name: $comment
         type: string
 
 entities:
 
-#  - name: Foo
-#    traits:
-#      - MetadataTrait
-#    properties: []
-#    propertyOrder:
-#      - $this
-
-
-  # TODO: Union type aliases
-  - name: ArraySchema
-    traits:
-      - MetadataTrait
-    properties:
-      - name: items
-        type: ArraySchema|ObjectSchema
-        unionRules:
-          - unionType: ArraySchema
-            ruleType: IsJsonObjectWithPropertyValue
-            propertyName: type
-            propertyJsonType: string
-            propertyJsonValue: array
-          - unionType: ObjectSchema
-            ruleType: IsJsonObjectWithPropertyValue
-            propertyName: type
-            propertyJsonType: string
-            propertyJsonValue: object
-      - name: type
-        type: string # TODO type="array"
-    propertyOrder:
-      - $MetadataTrait
-      - $this
-
   - name: DocumentTODO
     root: true # TODO: Support union roots
     properties:
       - name: __root
-        type: ArraySchema|ObjectSchema|boolean
-        unionRules:
-          - unionType: ArraySchema
-            ruleType: IsJsonObjectWithPropertyValue
-            propertyName: type
-            propertyJsonType: string
-            propertyJsonValue: array
-          - unionType: ObjectSchema
-            ruleType: IsJsonObjectWithPropertyValue
-            propertyName: type
-            propertyJsonType: string
-            propertyJsonValue: object
+        type: Schema|boolean
     propertyOrder:
+      - $this
+
+  - name: ArraySchema
+    traits:
+      - MetadataTrait
+    properties:
+      - name: type
+        type: string # type="array"
+      - name: items
+        type: Schema
+    propertyOrder:
+      - $MetadataTrait
       - $this
 
   - name: ObjectSchema
     traits:
       - MetadataTrait
     properties:
-      - name: properties
-        #type: "{Schema}"
-        type: ArraySchema|ObjectSchema
-        unionRules:
-          - unionType: ArraySchema
-            ruleType: IsJsonObjectWithPropertyValue
-            propertyName: type
-            propertyJsonType: string
-            propertyJsonValue: array
-          - unionType: ObjectSchema
-            ruleType: IsJsonObjectWithPropertyValue
-            propertyName: type
-            propertyJsonType: string
-            propertyJsonValue: object
       - name: type
-        type: string # TODO type="object"
+        type: string # type="object"
+      - name: properties
+        type: "{Schema}"
     propertyOrder:
       - $MetadataTrait
       - $this

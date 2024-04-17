@@ -23,6 +23,7 @@ public class EntityTypeModel implements TypeModel {
 
     private RawType rawType;
 
+    @ToString.Exclude
     private EntityModel entity;
 
     @Override

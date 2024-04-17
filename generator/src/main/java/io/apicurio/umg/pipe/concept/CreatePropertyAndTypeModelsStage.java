@@ -10,6 +10,8 @@ import io.apicurio.umg.pipe.AbstractStage;
 
 import java.util.stream.Collectors;
 
+import static io.apicurio.umg.pipe.Util.copy;
+
 /**
  * Go through all properties and create both a type model and a property model
  */
@@ -115,7 +117,7 @@ public class CreatePropertyAndTypeModelsStage extends AbstractStage {
                     .name(name)
                     .rawType(rawType)
                     .types(nestedTypes)
-                    .unionRules(property.getUnionRules())
+                    .unionRules(copy(property.getUnionRules()))
                     .build();
             property.getUnionRules().clear();
             return t;

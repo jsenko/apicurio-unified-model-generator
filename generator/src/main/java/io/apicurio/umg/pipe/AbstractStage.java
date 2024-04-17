@@ -98,6 +98,8 @@ public abstract class AbstractStage implements Stage {
     }
 
     protected void assertion(boolean expression, String message, Object... args) {
-        fail("Assertion failed: " + message, args);
+        if(!expression) {
+            fail("Assertion failed: " + message, args);
+        }
     }
 }

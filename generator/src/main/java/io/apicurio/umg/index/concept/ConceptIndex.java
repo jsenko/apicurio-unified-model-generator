@@ -126,7 +126,13 @@ public class ConceptIndex {
     // ========= Types
 
     public TypeModel lookupOrIndex(String name, Supplier<TypeModel> modelSupplier) {
-        return typeIndex.computeIfAbsent(name, _name -> modelSupplier.get());
+        // Cannot use computeIfAbsent for recursively
+        TypeModel res = typeIndex.get(name);
+        if(res == null) {
+            res = modelSupplier.get();
+            typeIndex.put(name, res);
+        }
+        return res;
     }
 
     public Collection<TypeModel> getTypes() {

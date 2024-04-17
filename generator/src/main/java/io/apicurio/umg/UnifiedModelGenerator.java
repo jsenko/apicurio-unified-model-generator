@@ -129,7 +129,7 @@ public class UnifiedModelGenerator {
 
         // Debug the models
         //pipe.addStage(new DebugStage());
-        /* TODO
+
         // Generate java code
         pipe.addStage(new LoadBaseClassesStage());
         pipe.addStage(new CreateModelTypeStage());
@@ -142,7 +142,7 @@ public class UnifiedModelGenerator {
         pipe.addStage(new CreateUnionTypeValuesStage());
         pipe.addStage(new CreateUnionTypesStage());
         pipe.addStage(new ApplyUnionTypesStage());
-
+        /* TODO
         pipe.addStage(new CreateInterfaceMethodsStage());
         pipe.addStage(new CreateEntityImplementationsStage());
         pipe.addStage(new CreateImplFieldsStage());

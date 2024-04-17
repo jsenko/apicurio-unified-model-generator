@@ -197,4 +197,8 @@ public class RawType {
         throw new RuntimeException("Unsupported raw type: " + this);
     }
 
+    @Override
+    public String toString() {
+        return asRawType();
+    }
 }

@@ -16,5 +16,4 @@ public class CreatePropertyComparatorStage extends AbstractStage {
             getState().getConceptIndex().index(entity, comparator);
         });
     }
-
 }
