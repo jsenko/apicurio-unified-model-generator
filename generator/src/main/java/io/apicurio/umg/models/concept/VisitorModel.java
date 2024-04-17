@@ -49,7 +49,7 @@ public class VisitorModel {
 
     public EntityModel findEntity(String entityName) {
         for (EntityModel entityModel : entities) {
-            if (entityModel.getName().equals(entityName)) {
+            if (entityModel.getNn().getName().equals(entityName)) {
                 return entityModel;
             }
         }

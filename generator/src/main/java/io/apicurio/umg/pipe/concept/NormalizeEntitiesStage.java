@@ -8,6 +8,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 import io.apicurio.umg.models.concept.EntityModel;
 import io.apicurio.umg.models.concept.NamespaceModel;
+import io.apicurio.umg.models.concept.NamespacedName;
 import io.apicurio.umg.pipe.AbstractStage;
 
 public class NormalizeEntitiesStage extends AbstractStage {
@@ -23,20 +24,19 @@ public class NormalizeEntitiesStage extends AbstractStage {
         // might create during processing).
         while (!modelsToProcess.isEmpty()) {
             EntityModel traitModel = modelsToProcess.remove();
-            if (modelsProcessed.contains(traitModel.fullyQualifiedName())) {
+            if (modelsProcessed.contains(traitModel.getNn().fullyQualifiedName())) {
                 continue;
             }
 
             // Check if we need to create a parent entity for this model in any parent scope
-            NamespaceModel ancestorNamespaceModel = traitModel.getNamespace().getParent();
+            NamespaceModel ancestorNamespaceModel = traitModel.getNn().getNamespace().getParent();
             while (ancestorNamespaceModel != null) {
-                if (needsParentEntity(ancestorNamespaceModel, traitModel.getName())) {
+                if (needsParentEntity(ancestorNamespaceModel, traitModel.getNn().getName())) {
                     EntityModel ancestorEntity = EntityModel.builder()
-                            .name(traitModel.getName())
+                            .nn(NamespacedName.nn(ancestorNamespaceModel, traitModel.getNn().getName()))
                             .parent(traitModel.getParent())
-                            .namespace(ancestorNamespaceModel)
                             .build();
-                    ancestorNamespaceModel.getEntities().put(ancestorEntity.getName(), ancestorEntity);
+                    ancestorNamespaceModel.getEntities().put(ancestorEntity.getNn().getName(), ancestorEntity);
                     modelsToProcess.add(ancestorEntity);
                     getState().getConceptIndex().index(ancestorEntity);
 
@@ -45,7 +45,7 @@ public class NormalizeEntitiesStage extends AbstractStage {
                     childEntities.forEach(childEntity -> {
                         childEntity.setParent(ancestorEntity);
                         // Skip processing this model if its turn comes up in the queue.
-                        modelsProcessed.add(childEntity.fullyQualifiedName());
+                        modelsProcessed.add(childEntity.getNn().fullyQualifiedName());
                     });
                     // break out of loop - no need to search further up the hierarchy
                     ancestorNamespaceModel = null;

@@ -29,7 +29,7 @@ public class CreateUnionTypeValuesStage extends AbstractUnionTypeJavaStage {
     private void createMissingUnionValues(PropertyModelWithOrigin property) {
         UnionPropertyType unionType = new UnionPropertyType(property.getProperty().getType());
         unionType.getNestedTypes().forEach(nestedType -> {
-            JavaType nestedJT = new JavaType(nestedType, property.getOrigin().getNamespace());
+            JavaType nestedJT = new JavaType(nestedType, property.getOrigin().getNn().getNamespace());
             if (nestedJT.isEntityList() || nestedJT.isEntityMap()) {
                 PropertyType entityType = nestedType.getNested().iterator().next();
                 String typeName = getTypeName(entityType);
@@ -39,7 +39,7 @@ public class CreateUnionTypeValuesStage extends AbstractUnionTypeJavaStage {
                 JavaInterfaceSource entityCollectionUnionValueSource = getState().getJavaIndex().lookupInterface(unionValueFQN);
                 // Make sure to only create the union value/wrapper once.
                 if (entityCollectionUnionValueSource == null) {
-                    createEntityCollectionUnionValue(property.getOrigin().getNamespace(), entityType, nestedJT.isEntityList());
+                    createEntityCollectionUnionValue(property.getOrigin().getNn().getNamespace(), entityType, nestedJT.isEntityList());
                 }
             }
         });

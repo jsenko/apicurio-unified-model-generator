@@ -29,7 +29,7 @@ public class CreatePropertyModelsStage extends AbstractStage {
                 TraitModel traitModel = getState().getConceptIndex().lookupTrait(fqTraitName);
                 trait.getProperties().forEach(property -> {
                     PropertyModel propertyModel = processProperty(specVersion, property);
-                    info("Created trait property model: %s/%s", traitModel.fullyQualifiedName(), propertyModel.getName());
+                    info("Created trait property model: %s/%s", traitModel.getNn().fullyQualifiedName(), propertyModel.getName());
                     traitModel.getProperties().put(property.getName(), propertyModel);
                 });
             });
@@ -40,7 +40,7 @@ public class CreatePropertyModelsStage extends AbstractStage {
                 EntityModel entityModel = getState().getConceptIndex().lookupEntity(fqEntityName);
                 entity.getProperties().forEach(property -> {
                     PropertyModel propertyModel = processProperty(specVersion, property);
-                    info("Created entity property model: %s/%s", entityModel.fullyQualifiedName(), propertyModel.getName());
+                    info("Created entity property model: %s/%s", entityModel.getNn().fullyQualifiedName(), propertyModel.getName());
                     entityModel.getProperties().put(property.getName(), propertyModel);
                 });
             });

@@ -1,15 +1,14 @@
 package io.apicurio.umg.models.concept;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
-import lombok.ToString;
+import lombok.experimental.SuperBuilder;
 
-@Builder
+import java.util.HashMap;
+import java.util.Map;
+
+@SuperBuilder
 @Getter
 @Setter
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
@@ -17,13 +16,16 @@ public class NamespaceModel {
 
     @EqualsAndHashCode.Include
     private NamespaceModel parent;
+
     @EqualsAndHashCode.Include
-    @ToString.Include
     private String name;
 
     private final Map<String, NamespaceModel> children = new HashMap<>();
+
     private final Map<String, EntityModel> entities = new HashMap<>();
+
     private final Map<String, TraitModel> traits = new HashMap<>();
+
     private VisitorModel visitor;
 
     public String fullName() {

@@ -30,14 +30,14 @@ public class ApplyUnionTypesStage extends AbstractUnionTypeJavaStage {
         JavaInterfaceSource unionTypeSource = getState().getJavaIndex().lookupInterface(unionTypeFQN);
 
         unionType.getNestedTypes().forEach(nestedType -> {
-            JavaType nestedJT = new JavaType(nestedType, property.getOrigin().getNamespace());
+            JavaType nestedJT = new JavaType(nestedType, property.getOrigin().getNn().getNamespace());
             JavaInterfaceSource unionValueSource = null;
             if (nestedJT.isPrimitive() || nestedJT.isPrimitiveList() || nestedJT.isPrimitiveMap()) {
                 String typeName = getTypeName(nestedType);
                 String unionValueFQN = getUnionTypeFQN(typeName + "UnionValue");
                 unionValueSource = getState().getJavaIndex().lookupInterface(unionValueFQN);
             } else if (nestedJT.isEntity()) {
-                unionValueSource = resolveJavaEntity(property.getOrigin().getNamespace().fullName(), nestedType.getSimpleType());
+                unionValueSource = resolveJavaEntity(property.getOrigin().getNn().getNamespace().fullName(), nestedType.getSimpleType());
             } else if (nestedJT.isEntityList()) {
                 String typeName = getTypeName(nestedType);
                 String unionValueFQN = getUnionTypeFQN(typeName + "UnionValue");

@@ -79,7 +79,7 @@ public class CreateImplicitUnionRulesStage extends AbstractStage {
         final int minimumRulesRequired = property.getType().getNested().size() - 1;
         int rulesCreated = 0;
         for (PropertyType nestedType : property.getType().getNested()) {
-            UnionRule rule = createImplicitRuleForEntity(entity.getNamespace(), nestedType.getSimpleType());
+            UnionRule rule = createImplicitRuleForEntity(entity.getNn().getNamespace(), nestedType.getSimpleType());
             if (rule != null) {
                 List<UnionRule> unionRules = property.getUnionRules();
                 if (unionRules == null) {
@@ -92,7 +92,7 @@ public class CreateImplicitUnionRulesStage extends AbstractStage {
         }
 
         if (rulesCreated < minimumRulesRequired) {
-            throw new RuntimeException("Failed to create appropriate implicit union rules for property '" + property.getName() + "' of entity: " + entity.fullyQualifiedName());
+            throw new RuntimeException("Failed to create appropriate implicit union rules for property '" + property.getName() + "' of entity: " + entity.getNn().fullyQualifiedName());
         }
     }
 

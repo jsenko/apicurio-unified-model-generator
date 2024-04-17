@@ -96,7 +96,7 @@ public abstract class AbstractCreateMethodsStage extends AbstractJavaStage {
             ut.addImportsTo(javaEntity);
             method.setReturnType(ut.toJavaTypeString());
         } else {
-            String propertyOriginNS = propertyWithOrigin.getOrigin().getNamespace().fullName();
+            String propertyOriginNS = propertyWithOrigin.getOrigin().getNn().getNamespace().fullName();
 
             JavaType jt = new JavaType(property.getType(), propertyOriginNS);
             jt.addImportsTo(javaEntity);
@@ -114,7 +114,7 @@ public abstract class AbstractCreateMethodsStage extends AbstractJavaStage {
      */
     protected void createSetter(JavaSource<?> javaEntity, PropertyModelWithOrigin propertyWithOrigin) {
         PropertyModel property = propertyWithOrigin.getProperty();
-        String propertyOriginNS = propertyWithOrigin.getOrigin().getNamespace().fullName();
+        String propertyOriginNS = propertyWithOrigin.getOrigin().getNn().getNamespace().fullName();
 
         MethodSource<?> method = ((MethodHolderSource<?>) javaEntity).addMethod().setName(setterMethodName(property)).setReturnTypeVoid().setPublic();
         addAnnotations(method);

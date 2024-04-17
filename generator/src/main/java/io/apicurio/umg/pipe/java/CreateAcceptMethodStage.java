@@ -35,7 +35,7 @@ public class CreateAcceptMethodStage extends AbstractJavaStage {
      * @param javaEntity
      */
     private void createAcceptMethod(EntityModel entity, JavaClassSource javaEntity) {
-        VisitorModel visitorModel = getState().getConceptIndex().lookupVisitor(entity.getNamespace().fullName());
+        VisitorModel visitorModel = getState().getConceptIndex().lookupVisitor(entity.getNn().getNamespace().fullName());
         JavaInterfaceSource javaVisitor = lookupJavaVisitor(visitorModel);
         String visitorInterfaceFQN = getRootVisitorInterfaceFQN();
         JavaInterfaceSource javaRootVisitorInterface = getState().getJavaIndex().lookupInterface(visitorInterfaceFQN);
@@ -50,7 +50,7 @@ public class CreateAcceptMethodStage extends AbstractJavaStage {
 
         BodyBuilder body = new BodyBuilder();
         body.addContext("visitorClass", javaVisitor.getName());
-        body.addContext("entityType", entity.getName());
+        body.addContext("entityType", entity.getNn().getName());
         body.append("${visitorClass} viz = (${visitorClass}) visitor;");
         body.append("viz.visit${entityType}(this);");
         method.setBody(body.toString());

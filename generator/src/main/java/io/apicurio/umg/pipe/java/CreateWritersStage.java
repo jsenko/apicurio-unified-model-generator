@@ -123,7 +123,7 @@ public class CreateWritersStage extends AbstractJavaStage {
 
         JavaInterfaceSource javaEntityModel = getState().getJavaIndex().lookupInterface(getJavaEntityInterfaceFQN(entityModel));
         if (javaEntityModel == null) {
-            warn("Java entity not found for: " + entityModel.fullyQualifiedName());
+            warn("Java entity not found for: " + entityModel.getNn().fullyQualifiedName());
             return;
         }
 

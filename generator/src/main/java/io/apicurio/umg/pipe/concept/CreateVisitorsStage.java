@@ -4,6 +4,7 @@ import java.util.stream.Collectors;
 
 import io.apicurio.umg.models.concept.EntityModel;
 import io.apicurio.umg.models.concept.NamespaceModel;
+import io.apicurio.umg.models.concept.NamespacedName;
 import io.apicurio.umg.models.concept.VisitorModel;
 import io.apicurio.umg.pipe.AbstractStage;
 
@@ -48,7 +49,7 @@ public class CreateVisitorsStage extends AbstractStage {
     }
 
     private EntityModel cloneEntity(EntityModel entity) {
-        return EntityModel.builder().name(entity.getName()).build();
+        return EntityModel.builder().nn(NamespacedName.nn(null, entity.getNn().getName())).build();
     }
 
 }

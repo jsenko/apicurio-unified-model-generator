@@ -24,12 +24,13 @@ public class RunUMGTest {
 
         ClassLoader classLoader = getClass().getClassLoader();
         specifications = List.of(
-                new File(classLoader.getResource("specs/openapi.yaml").getFile()),
+                //new File(classLoader.getResource("specs/openapi.yaml").getFile()),
                 //new File(classLoader.getResource("specs/asyncapi.yaml").getFile())
-                new File(classLoader.getResource("specs/json-schema.yaml").getFile())
+                //new File(classLoader.getResource("specs/json-schema.yaml").getFile())
+                new File(classLoader.getResource("specs/test.yaml").getFile())
         );
 
-        outputDir = new File("/home/jsenko/projects/work/repos/Apicurio/apicurio-unified-model-generator.git/generator/src/gen");
+        outputDir = new File("/home/jsenko/projects/work/repos/github.com/Apicurio/apicurio-unified-model-generator.git/generator/src/gen");
 
         Logger.info("Generating unified models from: " + specifications);
         if (specifications == null || specifications.isEmpty()) {

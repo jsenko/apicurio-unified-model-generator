@@ -306,11 +306,11 @@ public abstract class AbstractJavaStage extends AbstractStage {
     }
 
     protected JavaInterfaceSource resolveJavaEntity(EntityModel entityModel) {
-        return resolveJavaEntity(entityModel.getNamespace().fullName(), entityModel.getName());
+        return resolveJavaEntity(entityModel.getNn().getNamespace().fullName(), entityModel.getNn().getName());
     }
 
     protected JavaClassSource resolveJavaEntityImpl(EntityModel entityModel) {
-        return resolveJavaEntityImpl(entityModel.getNamespace().fullName(), entityModel.getName());
+        return resolveJavaEntityImpl(entityModel.getNn().getNamespace().fullName(), entityModel.getNn().getName());
     }
 
     protected JavaInterfaceSource resolveJavaEntity(String namespace, String entityName) {

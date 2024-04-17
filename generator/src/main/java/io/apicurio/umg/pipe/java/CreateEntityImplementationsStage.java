@@ -47,7 +47,7 @@ public class CreateEntityImplementationsStage extends AbstractJavaStage {
             entityClass.addImport(modelTypeEnum);
 
             MethodSource<JavaClassSource> entityConstructor = entityClass.addMethod().setPublic().setConstructor(true);
-            String prefix = getPrefix(entity.getNamespace());
+            String prefix = getPrefix(entity.getNn().getNamespace());
             String modelType = prefixToModelType(prefix);
             BodyBuilder body = new BodyBuilder();
             body.addContext("modelType", modelType);
