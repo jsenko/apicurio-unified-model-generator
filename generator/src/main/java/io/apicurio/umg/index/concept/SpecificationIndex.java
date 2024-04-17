@@ -76,8 +76,8 @@ public class SpecificationIndex {
     }
 
     public void indexTypeAlias(SpecificationVersion specVersion, Property model) {
-        if(!RawType.parse(model.getName()).isSimple()) {
-            throw new IllegalStateException("Property alias name must be a simple property type");
+        if(!RawType.parse(model.getName()).isEntityType()) {
+            throw new IllegalStateException("Property alias name must be an 'entity' property type");
         }
         String key = specVersion.getNamespace() + "." + model.getName();
         typeAliasIndex.put(key, model);

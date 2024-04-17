@@ -40,4 +40,11 @@ public class UnionTypeModel implements /*HasNamespacedName,*/ TypeModel {
     public boolean isUnionType() {
         return true;
     }
+
+    public UnionRule getRuleFor(String rawUnionSubtype) {
+        if (unionRules != null) {
+            return unionRules.stream().filter(rule -> rule.getUnionType().equals(rawUnionSubtype)).findFirst().orElse(null);
+        }
+        return null;
+    }
 }

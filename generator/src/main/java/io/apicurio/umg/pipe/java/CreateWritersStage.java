@@ -179,7 +179,7 @@ public class CreateWritersStage extends AbstractJavaStage {
     }
 
     private static String writeMethodName(EntityModel entityModel) {
-        return writeMethodName(entityModel.getName());
+        return writeMethodName(entityModel.getNn().getName());
     }
 
     private static String writeMethodName(String entityName) {
@@ -209,14 +209,14 @@ public class CreateWritersStage extends AbstractJavaStage {
                 handleEntityProperty(body);
             } else if (isPrimitive(property)) {
                 handlePrimitiveTypeProperty(body);
-            } else if (property.getType().isList()) {
+            } else if (property.getType().isListType()) {
                 handleListProperty(body);
-            } else if (property.getType().isMap()) {
+            } else if (property.getType().isMapType()) {
                 handleMapProperty(body);
-            } else if (property.getType().isUnion()) {
+            } else if (property.getType().isUnionType()) {
                 handleUnionProperty(body);
             } else {
-                warn("Entity property '" + property.getName() + "' not written (unsupported) for entity: " + entityModel.fullyQualifiedName());
+                warn("Entity property '" + property.getName() + "' not written (unsupported) for entity: " + entityModel.getNn().fullyQualifiedName());
                 warn("       property type: " + property.getType());
             }
         }
@@ -224,16 +224,16 @@ public class CreateWritersStage extends AbstractJavaStage {
         private void handleStarProperty(BodyBuilder body) {
             PropertyModel property = propertyWithOrigin.getProperty();
             if (isEntity(property)) {
-                String entityTypeName = entityModel.getNamespace().fullName() + "." + property.getType().getSimpleType();
+                String entityTypeName = entityModel.getNn().getNamespace().fullName() + "." + property.getType().getRawType().getSimpleType();
                 EntityModel propertyTypeEntity = getState().getConceptIndex().lookupEntity(entityTypeName);
                 if (propertyTypeEntity == null) {
-                    warn("STAR Property entity type not found for property: '" + property.getName() + "' of entity: " + entityModel.fullyQualifiedName());
+                    warn("STAR Property entity type not found for property: '" + property.getName() + "' of entity: " + entityModel.getNn().fullyQualifiedName());
                     warn("       property type: " + property.getType());
                     return;
                 }
                 JavaInterfaceSource entityTypeJavaModel = getState().getJavaIndex().lookupInterface(getJavaEntityInterfaceFQN(propertyTypeEntity));
                 if (entityTypeJavaModel == null) {
-                    warn("STAR Entity property '" + property.getName() + "' not written (unsupported) for entity: " + entityModel.fullyQualifiedName());
+                    warn("STAR Entity property '" + property.getName() + "' not written (unsupported) for entity: " + entityModel.getNn().fullyQualifiedName());
                     warn("       property type is entity but not found in JAVA index: " + property.getType());
                     return;
                 }
@@ -255,8 +255,8 @@ public class CreateWritersStage extends AbstractJavaStage {
             } else if (isPrimitive(property) || isPrimitiveList(property) || isPrimitiveMap(property)) {
                 writerClassSource.addImport(List.class);
 
-                body.addContext("valueType", determineValueType(property.getType()));
-                body.addContext("setPropertyMethodName", determineSetPropertyVariant(property.getType()));
+                body.addContext("valueType", determineValueType(property.getType().getRawType()));
+                body.addContext("setPropertyMethodName", determineSetPropertyVariant(property.getType().getRawType()));
 
                 body.append("{");
                 body.append("    List<String> propertyNames = node.getItemNames();");
@@ -266,7 +266,7 @@ public class CreateWritersStage extends AbstractJavaStage {
                 body.append("    });");
                 body.append("}");
             } else {
-                warn("STAR Entity property '" + property.getName() + "' not written (unhandled) for entity: " + entityModel.fullyQualifiedName());
+                warn("STAR Entity property '" + property.getName() + "' not written (unhandled) for entity: " + entityModel.getNn().fullyQualifiedName());
                 warn("       property type: " + property.getType());
             }
         }
@@ -274,16 +274,16 @@ public class CreateWritersStage extends AbstractJavaStage {
         private void handleRegexProperty(BodyBuilder body) {
             PropertyModel property = propertyWithOrigin.getProperty();
             if (isEntity(property)) {
-                String entityTypeName = entityModel.getNamespace().fullName() + "." + property.getType().getSimpleType();
+                String entityTypeName = entityModel.getNn().getNamespace().fullName() + "." + property.getType().getRawType().getSimpleType();
                 EntityModel propertyTypeEntity = getState().getConceptIndex().lookupEntity(entityTypeName);
                 if (propertyTypeEntity == null) {
-                    warn("REGEX Property entity type not found for property: '" + property.getName() + "' of entity: " + entityModel.fullyQualifiedName());
+                    warn("REGEX Property entity type not found for property: '" + property.getName() + "' of entity: " + entityModel.getNn().fullyQualifiedName());
                     warn("       property type: " + property.getType());
                     return;
                 }
                 JavaInterfaceSource entityTypeJavaModel = getState().getJavaIndex().lookupInterface(getJavaEntityInterfaceFQN(propertyTypeEntity));
                 if (entityTypeJavaModel == null) {
-                    warn("REGEX Entity property '" + property.getName() + "' not written (unsupported) for entity: " + entityModel.fullyQualifiedName());
+                    warn("REGEX Entity property '" + property.getName() + "' not written (unsupported) for entity: " + entityModel.getNn().fullyQualifiedName());
                     warn("       property type is entity but not found in JAVA index: " + property.getType());
                     return;
                 }
@@ -310,9 +310,9 @@ public class CreateWritersStage extends AbstractJavaStage {
             } else if (isPrimitive(property) || isPrimitiveList(property) || isPrimitiveMap(property)) {
                 writerClassSource.addImport(List.class);
 
-                body.addContext("valueType", determineValueType(property.getType()));
+                body.addContext("valueType", determineValueType(property.getType().getRawType()));
                 body.addContext("getterMethodName", getterMethodName(property));
-                body.addContext("setPropertyMethodName", determineSetPropertyVariant(property.getType()));
+                body.addContext("setPropertyMethodName", determineSetPropertyVariant(property.getType().getRawType()));
 
                 body.append("{");
                 body.append("    Map<String, ${valueType}> values = node.${getterMethodName}();");
@@ -324,21 +324,21 @@ public class CreateWritersStage extends AbstractJavaStage {
                 body.append("    }");
                 body.append("}");
             } else {
-                warn("REGEX Entity property '" + property.getName() + "' not written (unhandled) for entity: " + entityModel.fullyQualifiedName());
+                warn("REGEX Entity property '" + property.getName() + "' not written (unhandled) for entity: " + entityModel.getNn().fullyQualifiedName());
                 warn("       property type: " + property.getType());
             }
         }
 
         private void handleEntityProperty(BodyBuilder body) {
             PropertyModel property = propertyWithOrigin.getProperty();
-            String propertyTypeEntityName = entityModel.getNamespace().fullName() + "." + property.getType().getSimpleType();
+            String propertyTypeEntityName = entityModel.getNn().getNamespace().fullName() + "." + property.getType().getRawType().getSimpleType();
             EntityModel propertyTypeEntity = getState().getConceptIndex().lookupEntity(propertyTypeEntityName);
             if (propertyTypeEntity == null) {
-                warn("Property entity type not found for property: '" + property.getName() + "' of entity: " + entityModel.fullyQualifiedName());
+                warn("Property entity type not found for property: '" + property.getName() + "' of entity: " + entityModel.getNn().fullyQualifiedName());
                 warn("       property type: " + property.getType());
                 return;
             }
-            JavaInterfaceSource propertyTypeJavaEntity = resolveJavaEntityType(entityModel.getNamespace(), property);
+            JavaInterfaceSource propertyTypeJavaEntity = resolveJavaEntityType(entityModel.getNn().getNamespace(), property);
             writerClassSource.addImport(propertyTypeJavaEntity);
 
             body.addContext("propertyName", property.getName());
@@ -357,7 +357,7 @@ public class CreateWritersStage extends AbstractJavaStage {
 
         private void handlePrimitiveTypeProperty(BodyBuilder body) {
             PropertyModel property = propertyWithOrigin.getProperty();
-            body.addContext("setPropertyMethodName", determineSetPropertyVariant(property.getType()));
+            body.addContext("setPropertyMethodName", determineSetPropertyVariant(property.getType().getRawType()));
             body.addContext("propertyName", property.getName());
             body.addContext("getterMethodName", getterMethodName(property));
 
@@ -369,23 +369,23 @@ public class CreateWritersStage extends AbstractJavaStage {
             body.addContext("propertyName", property.getName());
             body.addContext("getterMethodName", getterMethodName(property));
 
-            RawType listValuePropertyType = property.getType().getNested().iterator().next();
+            RawType listValuePropertyType = property.getType().getRawType().getNested().iterator().next();
             if (listValuePropertyType.isPrimitiveType()) {
-                body.addContext("setPropertyMethodName", determineSetPropertyVariant(property.getType()));
+                body.addContext("setPropertyMethodName", determineSetPropertyVariant(property.getType().getRawType()));
 
                 body.append("JsonUtil.${setPropertyMethodName}(json, \"${propertyName}\", node.${getterMethodName}());");
             } else if (listValuePropertyType.isEntityType()) {
                 String entityTypeName = listValuePropertyType.getSimpleType();
-                String fqEntityName = entityModel.getNamespace().fullName() + "." + entityTypeName;
+                String fqEntityName = entityModel.getNn().getNamespace().fullName() + "." + entityTypeName;
                 EntityModel entityTypeModel = getState().getConceptIndex().lookupEntity(fqEntityName);
                 if (entityTypeModel == null) {
-                    warn("LIST Entity property '" + property.getName() + "' not written (unsupported) for entity: " + entityModel.fullyQualifiedName());
+                    warn("LIST Entity property '" + property.getName() + "' not written (unsupported) for entity: " + entityModel.getNn().fullyQualifiedName());
                     warn("       property type is entity but not found in index: " + property.getType());
                     return;
                 }
                 JavaInterfaceSource entityTypeJavaModel = resolveJavaEntity(entityTypeModel);
                 if (entityTypeJavaModel == null) {
-                    warn("LIST Entity property '" + property.getName() + "' not written (unsupported) for entity: " + entityModel.fullyQualifiedName());
+                    warn("LIST Entity property '" + property.getName() + "' not written (unsupported) for entity: " + entityModel.getNn().fullyQualifiedName());
                     warn("       property type is entity but not found in JAVA index: " + property.getType());
                     return;
                 }
@@ -414,7 +414,7 @@ public class CreateWritersStage extends AbstractJavaStage {
                 body.append("    }");
                 body.append("}");
             } else {
-                warn("LIST Entity property '" + property.getName() + "' not written (unsupported) for entity: " + entityModel.fullyQualifiedName());
+                warn("LIST Entity property '" + property.getName() + "' not written (unsupported) for entity: " + entityModel.getNn().fullyQualifiedName());
                 warn("       property type: " + property.getType());
             }
         }
@@ -424,24 +424,24 @@ public class CreateWritersStage extends AbstractJavaStage {
             body.addContext("propertyName", property.getName());
             body.addContext("getterMethodName", getterMethodName(property));
 
-            RawType mapValuePropertyType = property.getType().getNested().iterator().next();
+            RawType mapValuePropertyType = property.getType().getRawType().getNested().iterator().next();
             if (mapValuePropertyType.isPrimitiveType()) {
-                body.addContext("setPropertyMethodName", determineSetPropertyVariant(property.getType()));
+                body.addContext("setPropertyMethodName", determineSetPropertyVariant(property.getType().getRawType()));
                 writerClassSource.addImport(List.class);
 
                 body.append("JsonUtil.${setPropertyMethodName}(json, \"${propertyName}\", node.${getterMethodName}());");
             } else if (mapValuePropertyType.isEntityType()) {
                 String entityTypeName = mapValuePropertyType.getSimpleType();
-                String fqEntityName = entityModel.getNamespace().fullName() + "." + entityTypeName;
+                String fqEntityName = entityModel.getNn().getNamespace().fullName() + "." + entityTypeName;
                 EntityModel entityTypeModel = getState().getConceptIndex().lookupEntity(fqEntityName);
                 if (entityTypeModel == null) {
-                    warn("MAP Entity property '" + property.getName() + "' not written (unsupported) for entity: " + entityModel.fullyQualifiedName());
+                    warn("MAP Entity property '" + property.getName() + "' not written (unsupported) for entity: " + entityModel.getNn().fullyQualifiedName());
                     warn("       property type is entity but not found in index: " + property.getType());
                     return;
                 }
                 JavaInterfaceSource entityTypeJavaModel = getState().getJavaIndex().lookupInterface(getJavaEntityInterfaceFQN(entityTypeModel));
                 if (entityTypeJavaModel == null) {
-                    warn("MAP Entity property '" + property.getName() + "' not written (unsupported) for entity: " + entityModel.fullyQualifiedName());
+                    warn("MAP Entity property '" + property.getName() + "' not written (unsupported) for entity: " + entityModel.getNn().fullyQualifiedName());
                     warn("       property type is entity but not found in JAVA index: " + property.getType());
                     return;
                 }
@@ -468,15 +468,15 @@ public class CreateWritersStage extends AbstractJavaStage {
                 body.append("    }");
                 body.append("}");
             } else {
-                warn("MAP Entity property '" + property.getName() + "' not written (unsupported) for entity: " + entityModel.fullyQualifiedName());
+                warn("MAP Entity property '" + property.getName() + "' not written (unsupported) for entity: " + entityModel.getNn().fullyQualifiedName());
                 warn("       property type: " + property.getType());
             }
         }
 
         private void handleUnionProperty(BodyBuilder body) {
             PropertyModel property = propertyWithOrigin.getProperty();
-            NamespaceModel nsContext = propertyWithOrigin.getOrigin().getNamespace();
-            UnionPropertyType ut = new UnionPropertyType(property.getType());
+            NamespaceModel nsContext = propertyWithOrigin.getOrigin().getNn().getNamespace();
+            UnionPropertyType ut = new UnionPropertyType(property.getType().getRawType());
 
             body.addContext("unionJavaType", ut.toJavaTypeString());
             body.addContext("propertyName", property.getName());
@@ -505,13 +505,13 @@ public class CreateWritersStage extends AbstractJavaStage {
 
                     body.append("JsonUtil.${setPropertyMethodName}(json, \"${propertyName}\", union.${asMethodName}());");
                 } else if (jt.isEntity()) {
-                    String propertyTypeEntityName = entityModel.getNamespace().fullName() + "." + nestedType.getSimpleType();
+                    String propertyTypeEntityName = entityModel.getNn().getNamespace().fullName() + "." + nestedType.getSimpleType();
                     EntityModel propertyTypeEntity = getState().getConceptIndex().lookupEntity(propertyTypeEntityName);
                     if (propertyTypeEntity == null) {
-                        warn("UNION Entity property '" + property.getName() + "' not fully written for entity: " + entityModel.fullyQualifiedName());
+                        warn("UNION Entity property '" + property.getName() + "' not fully written for entity: " + entityModel.getNn().fullyQualifiedName());
                         warn("       property union type contains entity but not found in index: " + nestedType);
                     } else {
-                        JavaInterfaceSource propertyTypeJavaEntity = resolveJavaEntityType(entityModel.getNamespace(), nestedType);
+                        JavaInterfaceSource propertyTypeJavaEntity = resolveJavaEntityType(entityModel.getNn().getNamespace(), nestedType);
                         writerClassSource.addImport(propertyTypeJavaEntity);
 
                         body.addContext("propertyName", property.getName());
@@ -525,15 +525,15 @@ public class CreateWritersStage extends AbstractJavaStage {
                 } else if (jt.isEntityList()) {
                     RawType listValuePropertyType = nestedType.getNested().iterator().next();
                     String entityTypeName = listValuePropertyType.getSimpleType();
-                    String fqEntityName = entityModel.getNamespace().fullName() + "." + entityTypeName;
+                    String fqEntityName = entityModel.getNn().getNamespace().fullName() + "." + entityTypeName;
                     EntityModel entityTypeModel = getState().getConceptIndex().lookupEntity(fqEntityName);
                     if (entityTypeModel == null) {
-                        warn("UNION Entity property '" + property.getName() + "' not fully written for entity: " + entityModel.fullyQualifiedName());
+                        warn("UNION Entity property '" + property.getName() + "' not fully written for entity: " + entityModel.getNn().fullyQualifiedName());
                         warn("       property union type contains entity but not found in index: " + nestedType);
                     }
                     JavaInterfaceSource entityTypeJavaModel = resolveJavaEntity(entityTypeModel);
                     if (entityTypeJavaModel == null) {
-                        warn("UNION Entity property '" + property.getName() + "' not fully written for entity: " + entityModel.fullyQualifiedName());
+                        warn("UNION Entity property '" + property.getName() + "' not fully written for entity: " + entityModel.getNn().fullyQualifiedName());
                         warn("       property union type contains entity but not found in JAVA index: " + nestedType);
                     }
                     JavaInterfaceSource commonEntityTypeJavaModel = resolveCommonJavaEntity(entityTypeModel);
@@ -559,15 +559,15 @@ public class CreateWritersStage extends AbstractJavaStage {
                 } else if (jt.isEntityMap()) {
                     RawType mapValuePropertyType = nestedType;
                     String entityTypeName = mapValuePropertyType.getSimpleType();
-                    String fqEntityName = entityModel.getNamespace().fullName() + "." + entityTypeName;
+                    String fqEntityName = entityModel.getNn().getNamespace().fullName() + "." + entityTypeName;
                     EntityModel entityTypeModel = getState().getConceptIndex().lookupEntity(fqEntityName);
                     if (entityTypeModel == null) {
-                        warn("UNION Entity property '" + property.getName() + "' not fully written for entity: " + entityModel.fullyQualifiedName());
+                        warn("UNION Entity property '" + property.getName() + "' not fully written for entity: " + entityModel.getNn().fullyQualifiedName());
                         warn("       property union type contains entity but not found in index: " + nestedType);
                     }
                     JavaInterfaceSource entityTypeJavaModel = getState().getJavaIndex().lookupInterface(getJavaEntityInterfaceFQN(entityTypeModel));
                     if (entityTypeJavaModel == null) {
-                        warn("UNION Entity property '" + property.getName() + "' not fully written for entity: " + entityModel.fullyQualifiedName());
+                        warn("UNION Entity property '" + property.getName() + "' not fully written for entity: " + entityModel.getNn().fullyQualifiedName());
                         warn("       property union type contains entity but not found in JAVA index: " + nestedType);
                     }
                     JavaInterfaceSource commonEntityTypeJavaModel = resolveCommonJavaEntity(entityTypeModel);

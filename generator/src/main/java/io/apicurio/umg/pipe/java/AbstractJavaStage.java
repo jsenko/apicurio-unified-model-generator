@@ -290,11 +290,11 @@ public abstract class AbstractJavaStage extends AbstractStage {
     }
 
     protected JavaInterfaceSource resolveJavaEntityType(NamespaceModel namespace, PropertyModel property) {
-        return resolveJavaEntityType(namespace.fullName(), property.getType());
+        return resolveJavaEntityType(namespace.fullName(), property.getType().getRawType());
     }
 
     protected JavaInterfaceSource resolveJavaEntityType(String namespace, PropertyModel property) {
-        return resolveJavaEntityType(namespace, property.getType());
+        return resolveJavaEntityType(namespace, property.getType().getRawType());
     }
 
     protected JavaInterfaceSource resolveJavaEntityType(NamespaceModel namespace, RawType type) {
@@ -328,7 +328,7 @@ public abstract class AbstractJavaStage extends AbstractStage {
     }
 
     protected JavaInterfaceSource resolveCommonJavaEntity(EntityModel entityModel) {
-        return resolveCommonJavaEntity(entityModel.getNamespace().fullName(), entityModel.getName());
+        return resolveCommonJavaEntity(entityModel.getNn().getNamespace().fullName(), entityModel.getNn().getName());
     }
 
     protected JavaInterfaceSource resolveCommonJavaEntity(NamespaceModel namespace, String entityName) {
@@ -407,7 +407,7 @@ public abstract class AbstractJavaStage extends AbstractStage {
         }
 
         public JavaType(PropertyModelWithOrigin property) {
-            this(property.getProperty().getType(), property.getOrigin().getNamespace());
+            this(property.getProperty().getType().getRawType(), property.getOrigin().getNn().getNamespace());
         }
 
         public JavaType useCommonEntityResolution() {

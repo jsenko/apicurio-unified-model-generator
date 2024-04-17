@@ -83,7 +83,7 @@ public class CreatePropertyAndTypeModelsStage extends AbstractStage {
             var valueType = processAnyType(namespace, property, false, nested);
             return ListTypeModel.builder()
                     .name(name)
-                    .rawType(rawType.asRawType())
+                    .rawType(rawType)
                     .valueType(valueType)
                     .build();
         });

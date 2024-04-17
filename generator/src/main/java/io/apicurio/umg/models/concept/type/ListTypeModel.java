@@ -1,5 +1,6 @@
 package io.apicurio.umg.models.concept.type;
 
+import io.apicurio.umg.models.concept.RawType;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
@@ -16,7 +17,7 @@ public class ListTypeModel implements TypeModel {
     @EqualsAndHashCode.Include
     private String name;
 
-    private String rawType;
+    private RawType rawType;
 
     private TypeModel valueType;
 
