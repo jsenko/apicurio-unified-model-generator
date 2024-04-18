@@ -110,7 +110,7 @@ public class UnifiedModelGenerator {
         pipe.addStage(new AddTraitInterfaceToEntityStage());
 
         pipe.addStage(new CreateUnionTypeValuesStage());
-        //pipe.addStage(new CreateUnionTypesStage());
+        pipe.addStage(new CreateUnionTypesStage());
         //pipe.addStage(new ApplyUnionTypesStage());
         /* TODO
         pipe.addStage(new CreateInterfaceMethodsStage());

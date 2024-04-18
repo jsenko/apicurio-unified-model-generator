@@ -1,17 +1,9 @@
 package io.apicurio.umg.pipe.java;
 
-import io.apicurio.umg.models.concept.type.UnionTypeModel;
-import io.apicurio.umg.pipe.java.type.UnionJavaType;
-import org.jboss.forge.roaster.Roaster;
-import org.jboss.forge.roaster.model.source.JavaInterfaceSource;
-
 import io.apicurio.umg.models.concept.NamespaceModel;
 import io.apicurio.umg.models.concept.PropertyModelWithOrigin;
-
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.stream.Collectors;
+import org.jboss.forge.roaster.Roaster;
+import org.jboss.forge.roaster.model.source.JavaInterfaceSource;
 
 /**
  * Creates the union type interface.  For example, if the union type is "boolean|[string]" then
@@ -22,27 +14,22 @@ import java.util.stream.Collectors;
  * interface named "NumberWidgetUnion" will be created to represent that property (the value of
  * which can be either a number or a Widget entity).
  */
-public class CreateUnionTypesStage extends AbstractJavaStage {
-
+public class CreateUnionTypesStage2 extends AbstractUnionTypeJavaStage {
 
     @Override
-    protected void doProcess() {
-        getState().getConceptIndex().getTypes().stream()
-                .filter(t -> t.isUnionType())
-                .forEach(t -> createUnionType((UnionTypeModel) t));
+    protected void doProcess(PropertyModelWithOrigin property) {
+        createUnionType(property);
     }
-
 
     /**
      * @param property
      */
-    private void createUnionType(UnionTypeModel union) {
-        debug("Creating union type for: %s", union);
-        //UnionPropertyType unionType = new UnionPropertyType(property.getProperty().getType().getRawType());
-        var unionJavaType = new UnionJavaType(union, getState().getConfig().getRootNamespace());
+    private void createUnionType(PropertyModelWithOrigin property) {
+        debug("Creating union type for: " + property.getProperty().getName());
+        UnionPropertyType unionType = new UnionPropertyType(property.getProperty().getType().getRawType());
 
-        String name = unionJavaType.getName();
-        String _package = unionJavaType.getPackageName();
+        String name = unionType.getName();
+        String _package = getUnionTypesPackageName();
 
         // Create the main union type interface
         JavaInterfaceSource unionTypeInterface = Roaster.create(JavaInterfaceSource.class)
@@ -50,10 +37,8 @@ public class CreateUnionTypesStage extends AbstractJavaStage {
                 .setName(name)
                 .setPublic();
 
-        unionJavaType.setInterfaceSource(unionTypeInterface);
-
         // It must extend the "Union" interface
-        String unionFQN = unionJavaType.getUnionInterfaceFQN();
+        String unionFQN = getUnionInterfaceFQN();
         JavaInterfaceSource unionValueSource = getState().getJavaIndex().lookupInterface(unionFQN);
         unionTypeInterface.addImport(unionValueSource);
         unionTypeInterface.addInterface(unionValueSource);
