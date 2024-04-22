@@ -17,6 +17,7 @@ public class UnionJavaType implements IJavaType {
 
     private String name;
 
+    @Getter
     private UnionTypeModel typeModel;
 
     @Getter

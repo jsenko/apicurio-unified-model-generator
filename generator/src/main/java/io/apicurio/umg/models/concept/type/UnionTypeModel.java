@@ -23,9 +23,8 @@ import java.util.Set;
 @ToString
 public class UnionTypeModel implements /*HasNamespacedName,*/ TypeModel {
 
-    // Union is something between an entity and a type...
-    //@EqualsAndHashCode.Include
-    //private final NamespacedName nn;
+    @EqualsAndHashCode.Include
+    private String contextNamespace;
 
     @EqualsAndHashCode.Include
     private String name;

@@ -8,6 +8,8 @@ import io.apicurio.umg.models.concept.RawType;
  */
 public interface TypeModel {
 
+    String getContextNamespace();
+
     String getName();
 
     RawType getRawType();

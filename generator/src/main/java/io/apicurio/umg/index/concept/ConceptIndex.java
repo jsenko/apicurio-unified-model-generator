@@ -26,6 +26,8 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import static io.apicurio.umg.models.concept.NamespacedName.nn;
+
 /**
  * @author eric.wittmann@gmail.com
  */
@@ -37,7 +39,7 @@ public class ConceptIndex {
     private Trie<String, VisitorModel> visitorIndex = new PatriciaTrie<>();
     private Map<String, PropertyModelWithOriginComparator> propertyComparatorIndex = new HashMap<>();
 
-    private Map<String, TypeModel> typeIndex = new HashMap<>();
+    private Map<NamespacedName, TypeModel> typeIndex = new HashMap<>();
 
     // ========= Namespaces
 
@@ -125,12 +127,12 @@ public class ConceptIndex {
 
     // ========= Types
 
-    public TypeModel lookupOrIndex(String name, Supplier<TypeModel> modelSupplier) {
+    public TypeModel lookupOrIndex(String namespace, String name, Supplier<TypeModel> modelSupplier) {
         // Cannot use computeIfAbsent for recursively
-        TypeModel res = typeIndex.get(name);
+        TypeModel res = typeIndex.get(nn(lookupNamespace(namespace), name));
         if(res == null) {
             res = modelSupplier.get();
-            typeIndex.put(name, res);
+            typeIndex.put(nn(lookupNamespace(namespace), name), res);
         }
         return res;
     }
@@ -140,7 +142,7 @@ public class ConceptIndex {
     }
 
     public void index(TypeModel model) {
-        typeIndex.put(model.getName(), model);
+        typeIndex.put(nn(lookupNamespace(model.getContextNamespace()), model.getName()), model);
     }
 
     // ========= Visitors

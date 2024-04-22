@@ -56,9 +56,10 @@ public class CreatePropertyAndTypeModelsStage extends AbstractStage {
     }
 
 
-    private TypeModel processPrimitiveType(RawType rawType) {
+    private TypeModel processPrimitiveType(String namespace, RawType rawType) {
         var name = rawType.asRawType();
-        return getState().getConceptIndex().lookupOrIndex(name, () -> {
+        return getState().getConceptIndex().lookupOrIndex(namespace, name, () -> {
+            // Namespace is not actually used
             return PrimitiveType.getByRawType(name);
         });
     }
@@ -66,10 +67,12 @@ public class CreatePropertyAndTypeModelsStage extends AbstractStage {
 
     private TypeModel processEntityOrAliasType(String namespace, RawType rawType) {
         var name = rawType.asRawType();
-        return getState().getConceptIndex().lookupOrIndex(name, () -> {
+        return getState().getConceptIndex().lookupOrIndex(namespace, name, () -> {
             var entity = getState().getConceptIndex().lookupEntity(namespace, name);
             assertion(entity != null, "Could not find entity for type: %s", rawType);
             return EntityTypeModel.builder()
+                    .contextNamespace(namespace)
+                    .name(name)
                     .rawType(rawType)
                     .entity(entity)
                     .build();
@@ -80,10 +83,11 @@ public class CreatePropertyAndTypeModelsStage extends AbstractStage {
     private TypeModel processListType(String namespace, Property property, RawType rawType) {
         assertion(rawType.getNested().size() == 1);
         var name = rawType.asRawType();
-        return getState().getConceptIndex().lookupOrIndex(name, () -> {
+        return getState().getConceptIndex().lookupOrIndex(namespace, name, () -> {
             var nested = rawType.getNested().get(0);
             var valueType = processAnyType(namespace, property, false, nested);
             return ListTypeModel.builder()
+                    .contextNamespace(namespace)
                     .name(name)
                     .rawType(rawType)
                     .valueType(valueType)
@@ -95,11 +99,12 @@ public class CreatePropertyAndTypeModelsStage extends AbstractStage {
     private TypeModel processMapType(String namespace, Property property, RawType rawType) {
         assertion(rawType.getNested().size() == 1);
         var name = rawType.asRawType();
-        return getState().getConceptIndex().lookupOrIndex(name, () -> {
+        return getState().getConceptIndex().lookupOrIndex(namespace, name, () -> {
             var nested = rawType.getNested().get(0);
-            var keyType = processPrimitiveType(RawType.parse("string"));
+            var keyType = processPrimitiveType(namespace, RawType.parse("string"));
             var valueType = processAnyType(namespace, property, false, nested);
             return MapTypeModel.builder()
+                    .contextNamespace(namespace)
                     .name(name)
                     .rawType(rawType)
                     .keyType(keyType)
@@ -111,9 +116,10 @@ public class CreatePropertyAndTypeModelsStage extends AbstractStage {
 
     private TypeModel processUnionType(String namespace, Property property, boolean isAlias, RawType rawType) {
         var name = isAlias ? property.getName() : rawType.asRawType();
-        return getState().getConceptIndex().lookupOrIndex(name, () -> {
+        return getState().getConceptIndex().lookupOrIndex(namespace, name, () -> {
             var nestedTypes = rawType.getNested().stream().map(rt -> processAnyType(namespace, property, false, rt)).collect(Collectors.toList());
             var t = UnionTypeModel.builder()
+                    .contextNamespace(namespace)
                     .name(name)
                     .rawType(rawType)
                     .types(nestedTypes)
@@ -128,7 +134,7 @@ public class CreatePropertyAndTypeModelsStage extends AbstractStage {
     private TypeModel processAnyType(String namespace, Property property, boolean isAlias, RawType rawType) {
         if (rawType.isPrimitiveType()) {
             assertion(!isAlias, "Alias is not supported for primitive type: %s", rawType);
-            return processPrimitiveType(rawType);
+            return processPrimitiveType(namespace, rawType);
         } else if (rawType.isEntityType()) {
             assertion(!isAlias, "Alias is not supported for entity type: %s", rawType);
             return processEntityOrAliasType(namespace, rawType);

@@ -19,6 +19,9 @@ import lombok.experimental.SuperBuilder;
 public class EntityTypeModel implements TypeModel {
 
     @EqualsAndHashCode.Include
+    private String contextNamespace;
+
+    @EqualsAndHashCode.Include
     private String name;
 
     private RawType rawType;

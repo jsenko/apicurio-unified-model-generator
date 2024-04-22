@@ -46,6 +46,11 @@ public enum PrimitiveType implements TypeModel {
 
 
     @Override
+    public String getContextNamespace() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public boolean isPrimitiveType() {
         return true;
     }

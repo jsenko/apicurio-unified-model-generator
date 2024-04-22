@@ -15,6 +15,9 @@ import lombok.experimental.SuperBuilder;
 public abstract class CollectionTypeModel implements TypeModel {
 
     @EqualsAndHashCode.Include
+    private String contextNamespace;
+
+    @EqualsAndHashCode.Include
     private String name;
 
     private RawType rawType;

@@ -51,6 +51,7 @@ public class CreateUnionTypesStage extends AbstractJavaStage {
                 .setPublic();
 
         unionJavaType.setInterfaceSource(unionTypeInterface);
+        getState().getJavaIndex().index(unionTypeInterface);
 
         // It must extend the "Union" interface
         String unionFQN = unionJavaType.getUnionInterfaceFQN();
@@ -59,24 +60,27 @@ public class CreateUnionTypesStage extends AbstractJavaStage {
         unionTypeInterface.addInterface(unionValueSource);
 
         // Now create the union methods.
-        createUnionMethods(unionType, unionTypeInterface, property.getOrigin().getNn().getNamespace());
-
-        getState().getJavaIndex().index(unionTypeInterface);
+        createUnionMethods(unionJavaType);
     }
 
-    private void createUnionMethods(UnionPropertyType unionType, JavaInterfaceSource unionTypeInterface, NamespaceModel nsContext) {
-        unionType.getNestedTypes().forEach(nestedType -> {
-            String typeName = getTypeName(nestedType);
+    private void createUnionMethods(UnionJavaType unionJavaType) {
+        unionJavaType.getTypeModel().getTypes().forEach(nestedType -> {
+
+            var javaType = getState().getJavaIndex().lookupType(nestedType);
+
+            String typeName = javaType.getName();//getTypeName(nestedType);
             String isMethodName = "is" + typeName;
             String asMethodName = "as" + typeName;
 
-            JavaType jt = new JavaType(nestedType, nsContext.fullName()).useCommonEntityResolution();
+            //JavaType jt = new JavaType(nestedType, nsContext.fullName()).useCommonEntityResolution();
 
-            String asMethodReturnType = jt.toJavaTypeString();
+            String asMethodReturnType = javaType.toJavaTypeString();//jt.toJavaTypeString();
 
-            unionTypeInterface.addMethod().setName(isMethodName).setReturnType(boolean.class).setPublic();
-            unionTypeInterface.addMethod().setName(asMethodName).setReturnType(asMethodReturnType).setPublic();
-            jt.addImportsTo(unionTypeInterface);
+            unionJavaType.getInterfaceSource().addMethod().setName(isMethodName).setReturnType(boolean.class).setPublic();
+            unionJavaType.getInterfaceSource().addMethod().setName(asMethodName).setReturnType(asMethodReturnType).setPublic();
+            //jt.addImportsTo(unionTypeInterface);
+            javaType.addImportsTo(unionJavaType.getInterfaceSource()); // TODO
+
         });
     }
 }

@@ -16,14 +16,18 @@
 
 package io.apicurio.umg.index.java;
 
-import java.util.HashMap;
-import java.util.Map;
-
+import io.apicurio.umg.models.concept.type.TypeModel;
+import io.apicurio.umg.pipe.java.type.IJavaType;
+import lombok.Getter;
 import org.jboss.forge.roaster.model.source.JavaClassSource;
 import org.jboss.forge.roaster.model.source.JavaEnumSource;
 import org.jboss.forge.roaster.model.source.JavaInterfaceSource;
 
-import lombok.Getter;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.Supplier;
+
+import static io.apicurio.umg.models.concept.NamespacedName.nn;
 
 /**
  * @author eric.wittmann@gmail.com
@@ -38,6 +42,9 @@ public class JavaIndex {
 
     @Getter
     private Map<String, JavaEnumSource> enums = new HashMap<>();
+
+    @Getter
+    private Map<TypeModel, IJavaType> typeIndex = new HashMap<>();
 
     public JavaInterfaceSource lookupInterface(String fullyQualifiedName) {
         return this.interfaces.get(fullyQualifiedName);
@@ -66,4 +73,24 @@ public class JavaIndex {
         this.enums.put(fqcn, _enum);
     }
 
+
+    public IJavaType lookupType(TypeModel typeModel) {
+        return typeIndex.get(typeModel);
+    }
+
+    public IJavaType lookupOrIndex(TypeModel typeModel, Supplier<IJavaType> supplier) {
+        // Cannot use computeIfAbsent for recursively
+        var key = typeModel;
+        IJavaType res = typeIndex.get(key);
+        if (res == null) {
+            res = supplier.get();
+            typeIndex.put(key, res);
+        }
+        return res;
+    }
+
+
+    public void index(IJavaType javaType) {
+        typeIndex.put(javaType.getTypeModel(), javaType);
+    }
 }
