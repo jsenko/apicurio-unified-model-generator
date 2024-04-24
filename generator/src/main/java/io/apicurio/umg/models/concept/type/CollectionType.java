@@ -12,7 +12,7 @@ import lombok.experimental.SuperBuilder;
 @Setter
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @ToString
-public abstract class CollectionTypeModel implements TypeModel {
+public abstract class CollectionType implements Type {
 
     @EqualsAndHashCode.Include
     private String contextNamespace;
@@ -22,7 +22,7 @@ public abstract class CollectionTypeModel implements TypeModel {
 
     private RawType rawType;
 
-    private TypeModel valueType;
+    private Type valueType;
 
     @Override
     public boolean isCollectionType() {

@@ -16,7 +16,7 @@
 
 package io.apicurio.umg.index.java;
 
-import io.apicurio.umg.models.concept.type.TypeModel;
+import io.apicurio.umg.models.concept.type.Type;
 import io.apicurio.umg.pipe.java.type.IJavaType;
 import lombok.Getter;
 import org.jboss.forge.roaster.model.source.JavaClassSource;
@@ -26,8 +26,6 @@ import org.jboss.forge.roaster.model.source.JavaInterfaceSource;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Supplier;
-
-import static io.apicurio.umg.models.concept.NamespacedName.nn;
 
 /**
  * @author eric.wittmann@gmail.com
@@ -44,7 +42,7 @@ public class JavaIndex {
     private Map<String, JavaEnumSource> enums = new HashMap<>();
 
     @Getter
-    private Map<TypeModel, IJavaType> typeIndex = new HashMap<>();
+    private Map<Type, IJavaType> typeIndex = new HashMap<>();
 
     public JavaInterfaceSource lookupInterface(String fullyQualifiedName) {
         return this.interfaces.get(fullyQualifiedName);
@@ -74,13 +72,13 @@ public class JavaIndex {
     }
 
 
-    public IJavaType lookupType(TypeModel typeModel) {
-        return typeIndex.get(typeModel);
+    public IJavaType lookupType(Type type) {
+        return typeIndex.get(type);
     }
 
-    public IJavaType lookupOrIndex(TypeModel typeModel, Supplier<IJavaType> supplier) {
+    public IJavaType lookupOrIndex(Type type, Supplier<IJavaType> supplier) {
         // Cannot use computeIfAbsent for recursively
-        var key = typeModel;
+        var key = type;
         IJavaType res = typeIndex.get(key);
         if (res == null) {
             res = supplier.get();

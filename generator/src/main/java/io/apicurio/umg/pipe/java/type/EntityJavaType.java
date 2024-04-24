@@ -1,15 +1,15 @@
 package io.apicurio.umg.pipe.java.type;
 
-import io.apicurio.umg.models.concept.type.EntityTypeModel;
+import io.apicurio.umg.models.concept.type.EntityType;
 import lombok.Getter;
 import org.jboss.forge.roaster.model.source.Importer;
 
 public class EntityJavaType implements IJavaType {
 
     @Getter
-    private final EntityTypeModel typeModel;
+    private final EntityType typeModel;
 
-    public EntityJavaType(EntityTypeModel typeModel) {
+    public EntityJavaType(EntityType typeModel) {
         this.typeModel = typeModel;
     }
 

@@ -114,11 +114,15 @@ public class UnifiedModelGenerator {
         pipe.addStage(new CreateUnionTypeValuesStage());
         pipe.addStage(new CreateUnionTypesStage());
         pipe.addStage(new ApplyUnionTypesStage());
-        /* TODO
+
         pipe.addStage(new CreateInterfaceMethodsStage());
+
         pipe.addStage(new CreateEntityImplementationsStage());
+
         pipe.addStage(new CreateImplFieldsStage());
+
         pipe.addStage(new CreateImplMethodsStage());
+        /*
         pipe.addStage(new CreateUnionValueMethodsStage());
 
         pipe.addStage(new CreateReadersStage());

@@ -12,9 +12,9 @@ import io.apicurio.umg.models.concept.NamespaceModel;
 import io.apicurio.umg.models.concept.PropertyModel;
 import io.apicurio.umg.models.concept.PropertyModelWithOrigin;
 import io.apicurio.umg.models.concept.RawType;
-import io.apicurio.umg.models.concept.type.EntityTypeModel;
-import io.apicurio.umg.models.concept.type.TypeModel;
-import io.apicurio.umg.models.concept.type.UnionTypeModel;
+import io.apicurio.umg.models.concept.type.EntityType;
+import io.apicurio.umg.models.concept.type.Type;
+import io.apicurio.umg.models.concept.type.UnionType;
 import io.apicurio.umg.pipe.AbstractStage;
 
 /**
@@ -37,15 +37,15 @@ public class CreateImplicitUnionRulesStage extends AbstractStage {
     @Override
     protected void doProcess() {
         getState().getConceptIndex().getTypes().stream()
-                .filter(TypeModel::isUnionType)
-                .map(type -> (UnionTypeModel) type)
+                .filter(Type::isUnionType)
+                .map(type -> (UnionType) type)
                 .filter(type -> type.getUnionRules() == null || type.getUnionRules().isEmpty())
                 .filter(type -> isUnionAmbiguous(type))
                 .forEach(union -> createImplicitUnionRules(union));
     }
 
 
-    private boolean isUnionAmbiguous(UnionTypeModel union) {
+    private boolean isUnionAmbiguous(UnionType union) {
         int entityCount = 0;
         int arrayCount = 0;
         int mapCount = 0;
@@ -70,12 +70,12 @@ public class CreateImplicitUnionRulesStage extends AbstractStage {
     /**
      * Create implicit union rules for the union type.  This is only called if we actually need it.
      */
-    private void createImplicitUnionRules(UnionTypeModel union) {
+    private void createImplicitUnionRules(UnionType union) {
         final int minimumRulesRequired = union.getTypes().size() - 1;
         int rulesCreated = 0;
-        for (TypeModel nestedType : union.getTypes()) {
+        for (Type nestedType : union.getTypes()) {
             // We only support entity types
-            EntityTypeModel nestedEntityType = (EntityTypeModel) nestedType;
+            EntityType nestedEntityType = (EntityType) nestedType;
             UnionRule rule = createImplicitRuleForEntity(nestedEntityType.getEntity().getNn().getNamespace(), nestedType.getRawType().getSimpleType());
             if (rule != null) {
                 List<UnionRule> unionRules = union.getUnionRules();

@@ -2,9 +2,9 @@ package io.apicurio.umg.pipe.java;
 
 import io.apicurio.umg.models.concept.NamespaceModel;
 import io.apicurio.umg.models.concept.RawType;
-import io.apicurio.umg.models.concept.type.CollectionTypeModel;
-import io.apicurio.umg.models.concept.type.EntityTypeModel;
-import io.apicurio.umg.models.concept.type.UnionTypeModel;
+import io.apicurio.umg.models.concept.type.CollectionType;
+import io.apicurio.umg.models.concept.type.EntityType;
+import io.apicurio.umg.models.concept.type.UnionType;
 import org.jboss.forge.roaster.Roaster;
 import org.jboss.forge.roaster.model.source.JavaClassSource;
 import org.jboss.forge.roaster.model.source.JavaInterfaceSource;
@@ -28,14 +28,14 @@ public class CreateUnionTypeValuesStage extends AbstractJavaStage {
     protected void doProcess() {
         getState().getConceptIndex().getTypes().stream()
                 .filter(t -> t.isUnionType())
-                .forEach(t -> createMissingUnionValues((UnionTypeModel) t));
+                .forEach(t -> createMissingUnionValues((UnionType) t));
     }
 
 
-    private void createMissingUnionValues(UnionTypeModel union) {
+    private void createMissingUnionValues(UnionType union) {
         union.getTypes().forEach(nestedType -> {
             if (nestedType.isCollectionType()) {
-                var collectionType = (CollectionTypeModel) nestedType;
+                var collectionType = (CollectionType) nestedType;
                 // If the nested type is a list or map
                 var itemType = collectionType.getValueType();
                 if (itemType.isEntityType()) {
@@ -46,7 +46,7 @@ public class CreateUnionTypeValuesStage extends AbstractJavaStage {
                     // Make sure to only create the union value/wrapper once.
                     JavaInterfaceSource entityCollectionUnionValueSource = getState().getJavaIndex().lookupInterface(unionValueFQN);
                     if (entityCollectionUnionValueSource == null) {
-                        createEntityCollectionUnionValue(((EntityTypeModel) itemType).getEntity().getNn().getNamespace(), itemType.getRawType(), itemType.isListType());
+                        createEntityCollectionUnionValue(((EntityType) itemType).getEntity().getNn().getNamespace(), itemType.getRawType(), nestedType.isListType());
                     }
                 } else {
                     fail("This kind of union is not supported: %s", union.getRawType());

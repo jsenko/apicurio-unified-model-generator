@@ -1,6 +1,6 @@
 package io.apicurio.umg.pipe.java.type;
 
-import io.apicurio.umg.models.concept.type.TypeModel;
+import io.apicurio.umg.models.concept.type.Type;
 import org.jboss.forge.roaster.model.source.Importer;
 
 public interface IJavaType {
@@ -14,5 +14,5 @@ public interface IJavaType {
 
     String toJavaTypeString();
 
-    TypeModel getTypeModel();
+    Type getTypeModel();
 }

@@ -112,7 +112,7 @@ public class CreateTraversersStage extends AbstractVisitorStage {
     }
 
     private String createTraversalMethodBody(EntityModel entityModel, JavaClassSource traverserSource) {
-        JavaInterfaceSource javaEntity = lookupJavaEntity(entityModel);
+        JavaInterfaceSource javaEntity = lookupJavaEntityInterface(entityModel);
 
         BodyBuilder body = new BodyBuilder();
         body.append("node.accept(this.visitor);");

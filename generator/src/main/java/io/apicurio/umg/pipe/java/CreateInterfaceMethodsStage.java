@@ -3,6 +3,7 @@ package io.apicurio.umg.pipe.java;
 import java.util.List;
 import java.util.Map;
 
+import io.apicurio.umg.models.concept.type.PrimitiveType;
 import org.jboss.forge.roaster.model.source.JavaInterfaceSource;
 import org.jboss.forge.roaster.model.source.JavaSource;
 import org.jboss.forge.roaster.model.source.MethodSource;
@@ -32,7 +33,7 @@ public class CreateInterfaceMethodsStage extends AbstractCreateMethodsStage {
 
     private void createEntityInterfaceMethods(EntityModel entity) {
         entity.getProperties().values().forEach(property -> {
-            createPropertyMethods(lookupJavaEntity(entity),
+            createPropertyMethods(lookupJavaEntityInterface(entity),
                     PropertyModelWithOrigin.builder().property(property).origin(entity).build());
         });
     }
@@ -53,7 +54,7 @@ public class CreateInterfaceMethodsStage extends AbstractCreateMethodsStage {
      */
     @Override
     protected void createMappedNodeMethods(JavaSource<?> javaEntity, PropertyModelWithOrigin propertyWithOrigin) {
-        /* TODO
+
         PropertyModel property = propertyWithOrigin.getProperty();
 
         String mappedNodeFQN = getMappedNodeInterfaceFQN();
@@ -68,25 +69,25 @@ public class CreateInterfaceMethodsStage extends AbstractCreateMethodsStage {
         //        mappedNodeInterfaceWithType = jt.toJavaTypeString();
 
         if (isPrimitiveList(property)) {
-            Class<?> listType = primitiveTypeToClass(property.getType().getNested().iterator().next());
+            Class<?> listType = primitiveTypeToClass(property.getType().getRawType().getNested().iterator().next());
             javaEntity.addImport(List.class);
             javaEntity.addImport(listType);
             String mappedType = "List<" + listType.getSimpleName() + ">";
             mappedNodeInterfaceWithType = mappedNodeInterface.getName() + "<" + mappedType + ">";
         } else if (isPrimitiveMap(property)) {
-            Class<?> mapType = primitiveTypeToClass(property.getType().getNested().iterator().next());
+            Class<?> mapType = primitiveTypeToClass(property.getType().getRawType().getNested().iterator().next());
             javaEntity.addImport(Map.class);
             javaEntity.addImport(mapType);
             String mappedType = "Map<String, " + mapType.getSimpleName() + ">";
             mappedNodeInterfaceWithType = mappedNodeInterface.getName() + "<" + mappedType + ">";
         } else if (isPrimitive(property)) {
-            Class<?> primType = primitiveTypeToClass(property.getType());
+            Class<?> primType = ((PrimitiveType)property.getType()).get_class();
             javaEntity.addImport(primType);
             mappedNodeInterfaceWithType = mappedNodeInterface.getName() + "<" + primType.getSimpleName()
             + ">";
         } else if (isEntity(property)) {
             JavaInterfaceSource entityType = resolveJavaEntityType(
-                    propertyWithOrigin.getOrigin().getNamespace().fullName(), property);
+                    propertyWithOrigin.getOrigin().getNn().getNamespace().fullName(), property);
             if (entityType == null) {
                 error("Java interface for entity type not found: " + property.getType());
                 return;
@@ -101,7 +102,6 @@ public class CreateInterfaceMethodsStage extends AbstractCreateMethodsStage {
         }
 
         ((JavaInterfaceSource) javaEntity).addInterface(mappedNodeInterfaceWithType);
-        */
     }
 
     /*

@@ -17,7 +17,7 @@
 package io.apicurio.umg.index.concept;
 
 import io.apicurio.umg.models.concept.*;
-import io.apicurio.umg.models.concept.type.TypeModel;
+import io.apicurio.umg.models.concept.type.Type;
 import org.apache.commons.collections4.Trie;
 import org.apache.commons.collections4.trie.PatriciaTrie;
 
@@ -39,7 +39,7 @@ public class ConceptIndex {
     private Trie<String, VisitorModel> visitorIndex = new PatriciaTrie<>();
     private Map<String, PropertyModelWithOriginComparator> propertyComparatorIndex = new HashMap<>();
 
-    private Map<NamespacedName, TypeModel> typeIndex = new HashMap<>();
+    private Map<NamespacedName, Type> typeIndex = new HashMap<>();
 
     // ========= Namespaces
 
@@ -127,9 +127,9 @@ public class ConceptIndex {
 
     // ========= Types
 
-    public TypeModel lookupOrIndex(String namespace, String name, Supplier<TypeModel> modelSupplier) {
+    public Type lookupOrIndex(String namespace, String name, Supplier<Type> modelSupplier) {
         // Cannot use computeIfAbsent for recursively
-        TypeModel res = typeIndex.get(nn(lookupNamespace(namespace), name));
+        Type res = typeIndex.get(nn(lookupNamespace(namespace), name));
         if(res == null) {
             res = modelSupplier.get();
             typeIndex.put(nn(lookupNamespace(namespace), name), res);
@@ -137,11 +137,11 @@ public class ConceptIndex {
         return res;
     }
 
-    public Collection<TypeModel> getTypes() {
+    public Collection<Type> getTypes() {
         return typeIndex.values();
     }
 
-    public void index(TypeModel model) {
+    public void index(Type model) {
         typeIndex.put(nn(lookupNamespace(model.getContextNamespace()), model.getName()), model);
     }
 

@@ -6,7 +6,7 @@ import io.apicurio.umg.models.concept.RawType;
  * Represents a thing that can be a type of a property.
  * For example: entity, union, collection of another type.
  */
-public interface TypeModel {
+public interface Type {
 
     String getContextNamespace();
 
@@ -19,6 +19,18 @@ public interface TypeModel {
     }
 
     default boolean isPrimitiveType() {
+        return false;
+    }
+
+    default boolean isPrimitiveListType() {
+        return false;
+    }
+
+    default boolean isPrimitiveMapType() {
+        return false;
+    }
+
+    default boolean isEntityListType() {
         return false;
     }
 

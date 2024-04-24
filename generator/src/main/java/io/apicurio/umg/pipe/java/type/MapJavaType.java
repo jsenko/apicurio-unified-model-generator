@@ -1,7 +1,7 @@
 package io.apicurio.umg.pipe.java.type;
 
 import io.apicurio.umg.index.java.JavaIndex;
-import io.apicurio.umg.models.concept.type.MapTypeModel;
+import io.apicurio.umg.models.concept.type.MapType;
 import lombok.Getter;
 import org.jboss.forge.roaster.model.source.Importer;
 
@@ -10,10 +10,10 @@ import java.util.Map;
 public class MapJavaType implements IJavaType {
 
     @Getter
-    private final MapTypeModel typeModel;
+    private final MapType typeModel;
     private final JavaIndex index; // This replaces nesting, maybe we want to nest?
 
-    public MapJavaType(MapTypeModel typeModel, JavaIndex index) {
+    public MapJavaType(MapType typeModel, JavaIndex index) {
         this.typeModel = typeModel;
         this.index = index;
     }

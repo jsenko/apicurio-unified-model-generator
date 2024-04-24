@@ -317,7 +317,7 @@ public abstract class AbstractJavaStage extends AbstractStage {
         String _package = namespace;
         String prefix = getPrefix(namespace);
         String fqn = _package + "." + prefix + entityName;
-        return lookupJavaEntity(fqn);
+        return lookupJavaEntityInterface(fqn);
     }
 
     protected JavaClassSource resolveJavaEntityImpl(String namespace, String entityName) {
@@ -333,12 +333,12 @@ public abstract class AbstractJavaStage extends AbstractStage {
 
     protected JavaInterfaceSource resolveCommonJavaEntity(NamespaceModel namespace, String entityName) {
         EntityModel commonEntity = getState().getConceptIndex().lookupCommonEntity(namespace.fullName(), entityName);
-        return lookupJavaEntity(commonEntity);
+        return lookupJavaEntityInterface(commonEntity);
     }
 
     protected JavaInterfaceSource resolveCommonJavaEntity(String namespace, String entityName) {
         EntityModel commonEntity = getState().getConceptIndex().lookupCommonEntity(namespace, entityName);
-        return lookupJavaEntity(commonEntity);
+        return lookupJavaEntityInterface(commonEntity);
     }
 
     protected boolean hasNamedMethod(MethodHolderSource<?> entityInterface, String methodName) {
@@ -350,11 +350,11 @@ public abstract class AbstractJavaStage extends AbstractStage {
         return false;
     }
 
-    protected JavaInterfaceSource lookupJavaEntity(EntityModel entity) {
-        return lookupJavaEntity(getJavaEntityInterfaceFQN(entity));
+    protected JavaInterfaceSource lookupJavaEntityInterface(EntityModel entity) {
+        return lookupJavaEntityInterface(getJavaEntityInterfaceFQN(entity));
     }
 
-    protected JavaInterfaceSource lookupJavaEntity(String fullyQualifiedName) {
+    protected JavaInterfaceSource lookupJavaEntityInterface(String fullyQualifiedName) {
         return getState().getJavaIndex().lookupInterface(fullyQualifiedName);
     }
 

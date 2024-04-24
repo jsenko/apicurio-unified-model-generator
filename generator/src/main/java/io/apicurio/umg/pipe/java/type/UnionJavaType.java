@@ -1,7 +1,7 @@
 package io.apicurio.umg.pipe.java.type;
 
 import io.apicurio.umg.models.concept.RawType;
-import io.apicurio.umg.models.concept.type.UnionTypeModel;
+import io.apicurio.umg.models.concept.type.UnionType;
 import lombok.Getter;
 import lombok.Setter;
 import org.jboss.forge.roaster.model.source.Importer;
@@ -18,13 +18,13 @@ public class UnionJavaType implements IJavaType {
     private String name;
 
     @Getter
-    private UnionTypeModel typeModel;
+    private UnionType typeModel;
 
     @Getter
     @Setter
     private JavaInterfaceSource interfaceSource;
 
-    public UnionJavaType(UnionTypeModel typeModel, String rootNamespace) {
+    public UnionJavaType(UnionType typeModel, String rootNamespace) {
         this.rootNamespace = rootNamespace;
         // Check if the model has a different name than the raw type representation
         // Supports aliases

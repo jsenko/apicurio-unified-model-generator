@@ -1,20 +1,19 @@
 package io.apicurio.umg.pipe.java.type;
 
 import io.apicurio.umg.index.java.JavaIndex;
-import io.apicurio.umg.models.concept.type.ListTypeModel;
+import io.apicurio.umg.models.concept.type.ListType;
 import lombok.Getter;
 import org.jboss.forge.roaster.model.source.Importer;
 
 import java.util.List;
-import java.util.Map;
 
 public class ListJavaType implements IJavaType {
 
     @Getter
-    private final ListTypeModel typeModel;
+    private final ListType typeModel;
     private final JavaIndex index;
 
-    public ListJavaType(ListTypeModel typeModel, JavaIndex index) {
+    public ListJavaType(ListType typeModel, JavaIndex index) {
         this.typeModel = typeModel;
         this.index = index;
     }

@@ -5,3 +5,4 @@ prefix: Test
 namespace: io.apicurio.datamodels.models.test
 versions:
   - $ref: ./test/test1.yaml
+  - $ref: ./test/test2.yaml

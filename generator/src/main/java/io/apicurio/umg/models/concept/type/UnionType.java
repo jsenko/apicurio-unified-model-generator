@@ -8,10 +8,7 @@ import lombok.Setter;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 
-import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 /**
  * Represents union type
@@ -21,7 +18,7 @@ import java.util.Set;
 @Setter
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @ToString
-public class UnionTypeModel implements /*HasNamespacedName,*/ TypeModel {
+public class UnionType implements /*HasNamespacedName,*/ Type {
 
     @EqualsAndHashCode.Include
     private String contextNamespace;
@@ -31,7 +28,7 @@ public class UnionTypeModel implements /*HasNamespacedName,*/ TypeModel {
 
     private RawType rawType;
 
-    private List<TypeModel> types;
+    private List<Type> types;
 
     private List<UnionRule> unionRules;
 

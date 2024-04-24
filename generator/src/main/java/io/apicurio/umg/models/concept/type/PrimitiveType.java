@@ -11,7 +11,7 @@ import java.util.Map;
 
 @Getter
 @ToString
-public enum PrimitiveType implements TypeModel {
+public enum PrimitiveType implements Type {
 
     STRING("string", String.class),
     BOOLEAN("boolean", Boolean.class),

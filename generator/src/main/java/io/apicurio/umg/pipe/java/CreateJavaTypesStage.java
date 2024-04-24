@@ -17,6 +17,8 @@ public class CreateJavaTypesStage extends AbstractStage {
         getState().getConceptIndex().getTypes().forEach(typeModel -> {
             processAnyType(typeModel);
         });
+        // TODO Add root type
+        System.err.println();
     }
 
 
@@ -27,14 +29,14 @@ public class CreateJavaTypesStage extends AbstractStage {
     }
 
 
-    private IJavaType processEntityType(EntityTypeModel typeModel) {
+    private IJavaType processEntityType(EntityType typeModel) {
         return getState().getJavaIndex().lookupOrIndex(typeModel, () -> {
             return new EntityJavaType(typeModel);
         });
     }
 
 
-    private IJavaType processListType(ListTypeModel typeModel) {
+    private IJavaType processListType(ListType typeModel) {
         return getState().getJavaIndex().lookupOrIndex(typeModel, () -> {
             processAnyType(typeModel.getValueType());
             return new ListJavaType(typeModel, getState().getJavaIndex());
@@ -42,7 +44,7 @@ public class CreateJavaTypesStage extends AbstractStage {
     }
 
 
-    private IJavaType processMapType(MapTypeModel typeModel) {
+    private IJavaType processMapType(MapType typeModel) {
         return getState().getJavaIndex().lookupOrIndex(typeModel, () -> {
             processAnyType(typeModel.getKeyType());
             processAnyType(typeModel.getValueType());
@@ -51,7 +53,7 @@ public class CreateJavaTypesStage extends AbstractStage {
     }
 
 
-    private IJavaType processUnionType(UnionTypeModel typeModel) {
+    private IJavaType processUnionType(UnionType typeModel) {
         return getState().getJavaIndex().lookupOrIndex(typeModel, () -> {
             typeModel.getTypes().forEach(nested -> {
                 processAnyType(nested);
@@ -61,19 +63,19 @@ public class CreateJavaTypesStage extends AbstractStage {
     }
 
 
-    private IJavaType processAnyType(TypeModel typeModel) {
-        if (typeModel.isPrimitiveType()) {
-            return processPrimitiveType((PrimitiveType) typeModel);
-        } else if (typeModel.isEntityType()) {
-            return processEntityType((EntityTypeModel) typeModel);
-        } else if (typeModel.isListType()) {
-            return processListType((ListTypeModel) typeModel);
-        } else if (typeModel.isMapType()) {
-            return processMapType((MapTypeModel) typeModel);
-        } else if (typeModel.isUnionType()) {
-            return processUnionType((UnionTypeModel) typeModel);
+    private IJavaType processAnyType(Type type) {
+        if (type.isPrimitiveType()) {
+            return processPrimitiveType((PrimitiveType) type);
+        } else if (type.isEntityType()) {
+            return processEntityType((EntityType) type);
+        } else if (type.isListType()) {
+            return processListType((ListType) type);
+        } else if (type.isMapType()) {
+            return processMapType((MapType) type);
+        } else if (type.isUnionType()) {
+            return processUnionType((UnionType) type);
         } else {
-            fail("Unknown kind of type: %s", typeModel);
+            fail("Unknown kind of type: %s", type);
             return null;
         }
     }

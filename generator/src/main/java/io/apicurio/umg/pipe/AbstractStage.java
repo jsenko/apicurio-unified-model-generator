@@ -2,8 +2,8 @@ package io.apicurio.umg.pipe;
 
 import io.apicurio.umg.logging.Logger;
 import io.apicurio.umg.models.concept.PropertyModel;
-import io.apicurio.umg.models.concept.type.ListTypeModel;
-import io.apicurio.umg.models.concept.type.MapTypeModel;
+import io.apicurio.umg.models.concept.type.ListType;
+import io.apicurio.umg.models.concept.type.MapType;
 import lombok.Getter;
 import org.modeshape.common.text.Inflector;
 
@@ -38,11 +38,11 @@ public abstract class AbstractStage implements Stage {
     }
 
     protected boolean isEntityList(PropertyModel property) {
-        return property.getType().isListType() && ((ListTypeModel)property.getType()).getValueType().isEntityType();
+        return property.getType().isListType() && ((ListType)property.getType()).getValueType().isEntityType();
     }
 
     protected boolean isEntityMap(PropertyModel property) {
-        return property.getType().isMapType() && ((MapTypeModel)property.getType()).getValueType().isEntityType();
+        return property.getType().isMapType() && ((MapType)property.getType()).getValueType().isEntityType();
     }
 
     protected boolean isEntity(PropertyModel property) {
@@ -58,11 +58,11 @@ public abstract class AbstractStage implements Stage {
     }
 
     protected boolean isPrimitiveList(PropertyModel property) {
-        return property.getType().isListType() && ((ListTypeModel)property.getType()).getValueType().isPrimitiveType();
+        return property.getType().isListType() && ((ListType)property.getType()).getValueType().isPrimitiveType();
     }
 
     protected boolean isPrimitiveMap(PropertyModel property) {
-        return property.getType().isMapType() && ((MapTypeModel)property.getType()).getValueType().isPrimitiveType();
+        return property.getType().isMapType() && ((MapType)property.getType()).getValueType().isPrimitiveType();
     }
 
     protected String singularize(String name) {

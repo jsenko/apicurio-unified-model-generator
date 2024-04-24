@@ -1,6 +1,6 @@
 package io.apicurio.umg.models.concept;
 
-import io.apicurio.umg.models.concept.type.TypeModel;
+import io.apicurio.umg.models.concept.type.Type;
 import lombok.Builder;
 import lombok.Data;
 
@@ -15,7 +15,7 @@ public class PropertyModel {
 
     private String name;
 
-    private TypeModel type;
+    private Type type;
 
     /**
      * If this is a regex property, define the name of a collection that will contain the properties that match the regex.

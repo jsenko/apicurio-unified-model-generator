@@ -1,7 +1,6 @@
 package io.apicurio.umg.models.concept;
 
 import io.apicurio.umg.beans.SpecificationVersion;
-import io.apicurio.umg.models.concept.type.TypeModel;
 import io.apicurio.umg.models.spec.SpecificationModel;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;

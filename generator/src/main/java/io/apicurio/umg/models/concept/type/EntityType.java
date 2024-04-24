@@ -16,7 +16,7 @@ import lombok.experimental.SuperBuilder;
 @Setter
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @ToString
-public class EntityTypeModel implements TypeModel {
+public class EntityType implements Type {
 
     @EqualsAndHashCode.Include
     private String contextNamespace;

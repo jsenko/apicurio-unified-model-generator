@@ -11,10 +11,17 @@ import lombok.experimental.SuperBuilder;
 @Setter
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
 @ToString(callSuper = true)
-public class ListTypeModel extends CollectionTypeModel {
+public class MapType extends CollectionType {
+
+    private Type keyType; // TODO This is always a string for now
 
     @Override
-    public boolean isListType() {
+    public boolean isMapType() {
         return true;
+    }
+
+    @Override
+    public boolean isPrimitiveMapType() {
+        return getValueType().isPrimitiveType();
     }
 }

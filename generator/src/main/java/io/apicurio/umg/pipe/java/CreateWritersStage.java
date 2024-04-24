@@ -97,7 +97,7 @@ public class CreateWritersStage extends AbstractJavaStage {
         writeRootMethodSource.addAnnotation(Override.class);
 
         String writeMethodName = writeMethodName(entityModel);
-        JavaInterfaceSource entitySource = lookupJavaEntity(entityModel);
+        JavaInterfaceSource entitySource = lookupJavaEntityInterface(entityModel);
 
         writerClassSource.addImport(entitySource);
 

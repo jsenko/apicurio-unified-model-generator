@@ -9,7 +9,7 @@ import io.apicurio.umg.models.concept.NamespaceModel;
 import io.apicurio.umg.models.concept.PropertyModel;
 import io.apicurio.umg.models.concept.PropertyModelWithOrigin;
 import io.apicurio.umg.models.concept.RawType;
-import io.apicurio.umg.models.concept.type.UnionTypeModel;
+import io.apicurio.umg.models.concept.type.UnionType;
 import io.apicurio.umg.pipe.java.method.BodyBuilder;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -104,7 +104,7 @@ public class CreateReadersStage extends AbstractJavaStage {
         readRootMethodSource.addAnnotation(Override.class);
 
         String readMethodName = readMethodName(entityModel);
-        JavaInterfaceSource entitySource = lookupJavaEntity(entityModel);
+        JavaInterfaceSource entitySource = lookupJavaEntityInterface(entityModel);
         JavaClassSource entityImplSource = lookupJavaEntityImpl(entityModel);
 
         readerClassSource.addImport(entitySource);
@@ -509,8 +509,8 @@ public class CreateReadersStage extends AbstractJavaStage {
                 @Override
                 public int compare(RawType o1, RawType o2) {
                     if (o1.isEntityType() && o2.isEntityType()) {
-                        UnionRule rule1 = ((UnionTypeModel)property.getType()).getRuleFor(o1.asRawType());
-                        UnionRule rule2 = ((UnionTypeModel)property.getType()).getRuleFor(o2.asRawType());
+                        UnionRule rule1 = ((UnionType)property.getType()).getRuleFor(o1.asRawType());
+                        UnionRule rule2 = ((UnionType)property.getType()).getRuleFor(o2.asRawType());
                         if (rule1 != null && rule2 == null) {
                             return -1;
                         } else if (rule1 == null && rule2 != null) {
@@ -616,7 +616,7 @@ public class CreateReadersStage extends AbstractJavaStage {
                     body.addContext("readMethodName", readMethodName(nestedTypeEntity));
                     body.addContext("propertyEntityType", entityJavaSource.getName());
 
-                    UnionRule unionRule = ((UnionTypeModel)property.getType()).getRuleFor(nestedType.asRawType());
+                    UnionRule unionRule = ((UnionType)property.getType()).getRuleFor(nestedType.asRawType());
                     if (unionRule == null) {
                         body.append("if (JsonUtil.isObject(value)) {");
                     } else {
