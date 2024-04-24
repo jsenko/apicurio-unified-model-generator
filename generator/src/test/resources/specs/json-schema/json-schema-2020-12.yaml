@@ -9,9 +9,14 @@ namespace: io.apicurio.datamodels.models.jsonschema.v202012
 # - Keep everything in alphabetical order please
 # - Release notes: https://json-schema.org/draft/2020-12/release-notes.html
 
-typeAliases:
+# TODO: Union root types OR transparent root property
+root:
+  type: Schema
+
+typeAliases: # TODO: Union type aliases
+
   - name: Schema
-    type: ArraySchema|BooleanSchema|ComplexSchema|EmptySchema|FalseSchema|IntegerSchema|NullSchema|NumberSchema|ObjectSchema|StringSchema|TrueSchema
+    type: ArraySchema|BooleanSchema|ComplexSchema|EmptySchema|IntegerSchema|NullSchema|NumberSchema|ObjectSchema|StringSchema|boolean
     unionRules:
       - unionType: ArraySchema
         ruleType: IsJsonObjectWithPropertyValue
@@ -30,10 +35,6 @@ typeAliases:
       - unionType: EmptySchema
         ruleType: IsJsonObjectWithoutPropertyName
         propertyName: type
-      - unionType: FalseSchema
-        ruleType: IsJsonValue
-        propertyJsonType: boolean
-        propertyJsonValue: false
       - unionType: IntegerSchema
         ruleType: IsJsonObjectWithPropertyValue
         propertyName: type
@@ -59,28 +60,18 @@ typeAliases:
         propertyName: type
         propertyJsonType: string
         propertyJsonValue: string
-      - unionType: TrueSchema
-        ruleType: IsJsonValue
-        propertyJsonType: boolean
-        propertyJsonValue: true
-
-# TODO: Complex root type + unions
-#root:
-#  type: Schema
 
 traits:
 
   - name: AllOfTrait
     properties:
       - name: allOf
-        #type: "[Schema]"
-        type: Schema
+        type: "[Schema]"
 
   - name: AnyOfTrait
     properties:
       - name: anyOf
-        #type: "[Schema]"
-        type: Schema
+        type: "[Schema]"
 
   - name: ConstTrait
     properties:
@@ -158,8 +149,7 @@ traits:
   - name: OneOfTrait
     properties:
       - name: oneOf
-        #type: "[Schema]"
-        type: Schema
+        type: "[Schema]"
 
   - name: ReferenceTrait
     properties:
@@ -174,7 +164,7 @@ traits:
         type: Schema
 
 entities:
-  # TODO: Union type aliases
+
   - name: ArraySchema
     traits:
       - AllOfTrait
@@ -203,10 +193,9 @@ entities:
       - name: minItems
         type: integer
       - name: prefixItems
-        #type: "Schema|[Schema]"
-        type: Schema
+        type: Schema|[Schema]
       - name: type
-        type: string # TODO type="array"
+        type: string # type="array"
       - name: unevaluatedItems
         type: Schema
       - name: uniqueItems
@@ -242,7 +231,7 @@ entities:
       - ThenTrait
     properties:
       - name: type
-        type: string # TODO type="boolean"
+        type: string # type="boolean"
     propertyOrder:
       - $AllOfTrait
       - $AnyOfTrait
@@ -258,7 +247,6 @@ entities:
       - $ThenTrait
       - $this
 
-  # F*** THIS
   - name: ComplexSchema # TODO: How to best support this?
     properties:
       - name: type
@@ -268,8 +256,9 @@ entities:
     propertyOrder:
       - $this
 
-  - name: DocumentTODO
-    root: true # TODO: Support union roots
+  # TODO: Union root types OR transparent root property
+  - name: Document
+    root: true
     properties:
       - name: $id
         type: string
@@ -281,7 +270,7 @@ entities:
       - $this
 
   - name: EmptySchema
-    traits:
+    traits: # TODO: Can EmptySchema have traits?
       - AllOfTrait
       - AnyOfTrait
       - ConstTrait
@@ -294,9 +283,7 @@ entities:
       - OneOfTrait
       - ReferenceTrait
       - ThenTrait
-    properties:
-      - name: type
-        type: string # TODO type IS NOT DEFINED?
+    properties: { } # TODO
     propertyOrder:
       - $AllOfTrait
       - $AnyOfTrait
@@ -310,16 +297,6 @@ entities:
       - $OneOfTrait
       - $ReferenceTrait
       - $ThenTrait
-      - $this
-
-  # TODO: This is literally the `false` value
-  # TODO: Support type aliases?
-  - name: FalseSchema
-    traits: [ ]
-    properties:
-      - name: __dummy # TODO: Support empty properties?
-        type: any
-    propertyOrder:
       - $this
 
   - name: IntegerSchema
@@ -339,7 +316,7 @@ entities:
       - ThenTrait
     properties:
       - name: type
-        type: string # TODO type="integer"
+        type: string # type="integer"
     propertyOrder:
       - $AllOfTrait
       - $AnyOfTrait
@@ -373,7 +350,7 @@ entities:
       - ThenTrait
     properties:
       - name: type
-        type: string # TODO type="null"
+        type: string # type="null"
     propertyOrder:
       - $AllOfTrait
       - $AnyOfTrait
@@ -407,7 +384,7 @@ entities:
       - ThenTrait
     properties:
       - name: type
-        type: string # TODO type="number"
+        type: string # type="number"
     propertyOrder:
       - $AllOfTrait
       - $AnyOfTrait
@@ -440,46 +417,34 @@ entities:
       - ThenTrait
     properties:
       - name: additionalProperties
-        #type: "{Schema}"
-        type: Schema
+        type: "{Schema}"
       - name: dependentRequired
-        type: "{ObjectSchemaDependentRequiredItem}" # FULL: "{[string]}"
+        type: "{[string]}" # TODO
       - name: dependentSchemas
-        #type: "{Schema}"
-        type: Schema
+        type: "{Schema}"
       - name: maxProperties
         type: integer
       - name: minProperties
         type: integer
       - name: patternProperties
-        #type: "{Schema}"
-        type: Schema
+        type: "{Schema}"
       - name: properties
-        #type: "{Schema}"
-        type: Schema
+        type: "{Schema}"
       - name: propertyNames
-        type: EmptySchema|FalseSchema|StringSchema|TrueSchema
+        type: EmptySchema|StringSchema|boolean
         unionRules:
           - unionType: EmptySchema
             ruleType: IsJsonObjectWithoutPropertyName
             propertyName: type
-          - unionType: FalseSchema
-            ruleType: IsJsonValue
-            propertyJsonType: boolean
-            propertyJsonValue: false
           - unionType: StringSchema
             ruleType: IsJsonObjectWithPropertyValue
             propertyName: type
             propertyJsonType: string
             propertyJsonValue: string
-          - unionType: TrueSchema
-            ruleType: IsJsonValue
-            propertyJsonType: boolean
-            propertyJsonValue: true
       - name: required
         type: "[string]"
       - name: type
-        type: string # TODO type="object"
+        type: string # type="object"
       - name: unevaluatedProperties
         type: Schema
     propertyOrder:
@@ -495,13 +460,6 @@ entities:
       - $OneOfTrait
       - $ReferenceTrait
       - $ThenTrait
-      - $this
-
-  - name: ObjectSchemaDependentRequiredItem
-    properties:
-      - name: value
-        type: "[string]"
-    propertyOrder:
       - $this
 
   - name: StringSchema
@@ -533,7 +491,7 @@ entities:
       - name: pattern
         type: string
       - name: type
-        type: string # TODO type="string"
+        type: string # type="string"
     propertyOrder:
       - $AllOfTrait
       - $AnyOfTrait
@@ -548,14 +506,4 @@ entities:
       - $OneOfTrait
       - $ReferenceTrait
       - $ThenTrait
-      - $this
-
-  # If a property type is defined as e.g. `boolean|JsonSchemaNode`; `JsonSchemaNode` can be used instead
-  # TODO: See FalseSchema
-  - name: TrueSchema
-    traits: [ ]
-    properties:
-      - name: __dummy
-        type: any
-    propertyOrder:
       - $this
