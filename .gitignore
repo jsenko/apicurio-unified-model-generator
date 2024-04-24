@@ -9,3 +9,5 @@ target/
 .settings
 .classpath
 website
+.trash~
+generator/src/gen
