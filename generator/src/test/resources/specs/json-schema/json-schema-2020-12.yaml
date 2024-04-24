@@ -63,47 +63,47 @@ typeAliases: # TODO: Union type aliases
 
 traits:
 
-  - name: AllOfTrait
+  - name: AllOf
     properties:
       - name: allOf
         type: "[Schema]"
 
-  - name: AnyOfTrait
+  - name: AnyOf
     properties:
       - name: anyOf
         type: "[Schema]"
 
-  - name: ConstTrait
+  - name: Const
     properties:
       - name: const
         type: any
 
-  - name: DefinitionsTrait
+  - name: Definitions
     properties:
       - name: $defs
         type: "[any]"
 
-  - name: ElseTrait
+  - name: Else
     properties:
       - name: else
         type: Schema
 
-  - name: EnumTrait
+  - name: Enum
     properties:
       - name: enum
         type: "[any]"
 
-  - name: FormatTrait
+  - name: Format
     properties:
       - name: format
         type: string
 
-  - name: IfTrait
+  - name: If
     properties:
       - name: if
         type: Schema
 
-  - name: MetadataTrait
+  - name: Metadata
     transparent: true
     properties:
       - name: default
@@ -127,12 +127,12 @@ traits:
       - name: $dynamicAnchor
         type: string
 
-  - name: NotTrait
+  - name: Not
     properties:
       - name: not
         type: Schema
 
-  - name: NumericTrait
+  - name: Numeric
     transparent: true
     properties:
       - name: exclusiveMaximum
@@ -146,19 +146,19 @@ traits:
       - name: multipleOf
         type: integer
 
-  - name: OneOfTrait
+  - name: OneOf
     properties:
       - name: oneOf
         type: "[Schema]"
 
-  - name: ReferenceTrait
+  - name: Reference
     properties:
       - name: $dynamicRef
         type: string
       - name: $ref
         type: string
 
-  - name: ThenTrait
+  - name: Then
     properties:
       - name: then
         type: Schema
@@ -167,18 +167,18 @@ entities:
 
   - name: ArraySchema
     traits:
-      - AllOfTrait
-      - AnyOfTrait
-      - ConstTrait
-      - DefinitionsTrait
-      - ElseTrait
-      - EnumTrait
-      - IfTrait
-      - MetadataTrait
-      - NotTrait
-      - OneOfTrait
-      - ReferenceTrait
-      - ThenTrait
+      - AllOf
+      - AnyOf
+      - Const
+      - Definitions
+      - Else
+      - Enum
+      - If
+      - Metadata
+      - Not
+      - OneOf
+      - Reference
+      - Then
     properties:
       - name: contains
         type: Schema
@@ -201,50 +201,50 @@ entities:
       - name: uniqueItems
         type: boolean
     propertyOrder:
-      - $AllOfTrait
-      - $AnyOfTrait
-      - $ConstTrait
-      - $DefinitionsTrait
-      - $ElseTrait
-      - $EnumTrait
-      - $IfTrait
-      - $MetadataTrait
-      - $NotTrait
-      - $OneOfTrait
-      - $ReferenceTrait
-      - $ThenTrait
+      - $AllOf
+      - $AnyOf
+      - $Const
+      - $Definitions
+      - $Else
+      - $Enum
+      - $If
+      - $Metadata
+      - $Not
+      - $OneOf
+      - $Reference
+      - $Then
       - $this
 
   - name: BooleanSchema
     traits:
-      - AllOfTrait
-      - AnyOfTrait
-      - ConstTrait
-      - DefinitionsTrait
-      - ElseTrait
-      - EnumTrait
-      - IfTrait
-      - MetadataTrait
-      - NotTrait
-      - OneOfTrait
-      - ReferenceTrait
-      - ThenTrait
+      - AllOf
+      - AnyOf
+      - Const
+      - Definitions
+      - Else
+      - Enum
+      - If
+      - Metadata
+      - Not
+      - OneOf
+      - Reference
+      - Then
     properties:
       - name: type
         type: string # type="boolean"
     propertyOrder:
-      - $AllOfTrait
-      - $AnyOfTrait
-      - $ConstTrait
-      - $DefinitionsTrait
-      - $ElseTrait
-      - $EnumTrait
-      - $IfTrait
-      - $MetadataTrait
-      - $NotTrait
-      - $OneOfTrait
-      - $ReferenceTrait
-      - $ThenTrait
+      - $AllOf
+      - $AnyOf
+      - $Const
+      - $Definitions
+      - $Else
+      - $Enum
+      - $If
+      - $Metadata
+      - $Not
+      - $OneOf
+      - $Reference
+      - $Then
       - $this
 
   - name: ComplexSchema # TODO: How to best support this?
@@ -271,150 +271,150 @@ entities:
 
   - name: EmptySchema
     traits: # TODO: Can EmptySchema have traits?
-      - AllOfTrait
-      - AnyOfTrait
-      - ConstTrait
-      - DefinitionsTrait
-      - ElseTrait
-      - EnumTrait
-      - IfTrait
-      - MetadataTrait
-      - NotTrait
-      - OneOfTrait
-      - ReferenceTrait
-      - ThenTrait
+      - AllOf
+      - AnyOf
+      - Const
+      - Definitions
+      - Else
+      - Enum
+      - If
+      - Metadata
+      - Not
+      - OneOf
+      - Reference
+      - Then
     properties: { } # TODO
     propertyOrder:
-      - $AllOfTrait
-      - $AnyOfTrait
-      - $ConstTrait
-      - $DefinitionsTrait
-      - $ElseTrait
-      - $EnumTrait
-      - $IfTrait
-      - $MetadataTrait
-      - $NotTrait
-      - $OneOfTrait
-      - $ReferenceTrait
-      - $ThenTrait
+      - $AllOf
+      - $AnyOf
+      - $Const
+      - $Definitions
+      - $Else
+      - $Enum
+      - $If
+      - $Metadata
+      - $Not
+      - $OneOf
+      - $Reference
+      - $Then
       - $this
 
   - name: IntegerSchema
     traits:
-      - AllOfTrait
-      - AnyOfTrait
-      - ConstTrait
-      - DefinitionsTrait
-      - ElseTrait
-      - EnumTrait
-      - IfTrait
-      - MetadataTrait
-      - NotTrait
-      - NumericTrait
-      - OneOfTrait
-      - ReferenceTrait
-      - ThenTrait
+      - AllOf
+      - AnyOf
+      - Const
+      - Definitions
+      - Else
+      - Enum
+      - If
+      - Metadata
+      - Not
+      - Numeric
+      - OneOf
+      - Reference
+      - Then
     properties:
       - name: type
         type: string # type="integer"
     propertyOrder:
-      - $AllOfTrait
-      - $AnyOfTrait
-      - $ConstTrait
-      - $DefinitionsTrait
-      - $ElseTrait
-      - $EnumTrait
-      - $IfTrait
-      - $MetadataTrait
-      - $NotTrait
-      - $NumericTrait
-      - $OneOfTrait
-      - $ReferenceTrait
-      - $ThenTrait
+      - $AllOf
+      - $AnyOf
+      - $Const
+      - $Definitions
+      - $Else
+      - $Enum
+      - $If
+      - $Metadata
+      - $Not
+      - $Numeric
+      - $OneOf
+      - $Reference
+      - $Then
       - $this
 
   - name: NullSchema
     traits:
-      - AllOfTrait
-      - AnyOfTrait
-      - ConstTrait
-      - DefinitionsTrait
-      - ElseTrait
-      - EnumTrait
-      - IfTrait
-      - MetadataTrait
-      - NotTrait
-      - NumericTrait
-      - OneOfTrait
-      - ReferenceTrait
-      - ThenTrait
+      - AllOf
+      - AnyOf
+      - Const
+      - Definitions
+      - Else
+      - Enum
+      - If
+      - Metadata
+      - Not
+      - Numeric
+      - OneOf
+      - Reference
+      - Then
     properties:
       - name: type
         type: string # type="null"
     propertyOrder:
-      - $AllOfTrait
-      - $AnyOfTrait
-      - $ConstTrait
-      - $DefinitionsTrait
-      - $ElseTrait
-      - $EnumTrait
-      - $IfTrait
-      - $MetadataTrait
-      - $NotTrait
-      - $NumericTrait
-      - $OneOfTrait
-      - $ReferenceTrait
-      - $ThenTrait
+      - $AllOf
+      - $AnyOf
+      - $Const
+      - $Definitions
+      - $Else
+      - $Enum
+      - $If
+      - $Metadata
+      - $Not
+      - $Numeric
+      - $OneOf
+      - $Reference
+      - $Then
       - $this
 
   - name: NumberSchema
     traits:
-      - AllOfTrait
-      - AnyOfTrait
-      - ConstTrait
-      - DefinitionsTrait
-      - ElseTrait
-      - EnumTrait
-      - IfTrait
-      - MetadataTrait
-      - NotTrait
-      - NumericTrait
-      - OneOfTrait
-      - ReferenceTrait
-      - ThenTrait
+      - AllOf
+      - AnyOf
+      - Const
+      - Definitions
+      - Else
+      - Enum
+      - If
+      - Metadata
+      - Not
+      - Numeric
+      - OneOf
+      - Reference
+      - Then
     properties:
       - name: type
         type: string # type="number"
     propertyOrder:
-      - $AllOfTrait
-      - $AnyOfTrait
-      - $ConstTrait
-      - $DefinitionsTrait
-      - $ElseTrait
-      - $EnumTrait
-      - $IfTrait
-      - $MetadataTrait
-      - $NotTrait
-      - $NumericTrait
-      - $OneOfTrait
-      - $ReferenceTrait
-      - $ThenTrait
+      - $AllOf
+      - $AnyOf
+      - $Const
+      - $Definitions
+      - $Else
+      - $Enum
+      - $If
+      - $Metadata
+      - $Not
+      - $Numeric
+      - $OneOf
+      - $Reference
+      - $Then
       - $this
 
   - name: ObjectSchema
     traits:
-      - AllOfTrait
-      - AnyOfTrait
-      - ConstTrait
-      - DefinitionsTrait
-      - ElseTrait
-      - EnumTrait
-      - IfTrait
-      - MetadataTrait
-      - NotTrait
-      - OneOfTrait
-      - ReferenceTrait
-      - ThenTrait
+      - AllOf
+      - AnyOf
+      - Const
+      - Definitions
+      - Else
+      - Enum
+      - If
+      - Metadata
+      - Not
+      - OneOf
+      - Reference
+      - Then
     properties:
       - name: additionalProperties
         type: "{Schema}"
@@ -448,35 +448,35 @@ entities:
       - name: unevaluatedProperties
         type: Schema
     propertyOrder:
-      - $AllOfTrait
-      - $AnyOfTrait
-      - $ConstTrait
-      - $DefinitionsTrait
-      - $ElseTrait
-      - $EnumTrait
-      - $IfTrait
-      - $MetadataTrait
-      - $NotTrait
-      - $OneOfTrait
-      - $ReferenceTrait
-      - $ThenTrait
+      - $AllOf
+      - $AnyOf
+      - $Const
+      - $Definitions
+      - $Else
+      - $Enum
+      - $If
+      - $Metadata
+      - $Not
+      - $OneOf
+      - $Reference
+      - $Then
       - $this
 
   - name: StringSchema
     traits:
-      - AllOfTrait
-      - AnyOfTrait
-      - ConstTrait
-      - DefinitionsTrait
-      - ElseTrait
-      - EnumTrait
-      - FormatTrait
-      - IfTrait
-      - MetadataTrait
-      - NotTrait
-      - OneOfTrait
-      - ReferenceTrait
-      - ThenTrait
+      - AllOf
+      - AnyOf
+      - Const
+      - Definitions
+      - Else
+      - Enum
+      - Format
+      - If
+      - Metadata
+      - Not
+      - OneOf
+      - Reference
+      - Then
     properties:
       - name: contentEncoding
         type: string
@@ -493,17 +493,17 @@ entities:
       - name: type
         type: string # type="string"
     propertyOrder:
-      - $AllOfTrait
-      - $AnyOfTrait
-      - $ConstTrait
-      - $DefinitionsTrait
-      - $ElseTrait
-      - $EnumTrait
-      - $FormatTrait
-      - $IfTrait
-      - $MetadataTrait
-      - $NotTrait
-      - $OneOfTrait
-      - $ReferenceTrait
-      - $ThenTrait
+      - $AllOf
+      - $AnyOf
+      - $Const
+      - $Definitions
+      - $Else
+      - $Enum
+      - $Format
+      - $If
+      - $Metadata
+      - $Not
+      - $OneOf
+      - $Reference
+      - $Then
       - $this
