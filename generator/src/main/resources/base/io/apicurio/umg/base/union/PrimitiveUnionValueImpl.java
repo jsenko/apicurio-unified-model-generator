@@ -1,12 +1,12 @@
-package io.apicurio.umg.base.union;
+package io.apicurio.datamodels.models.union;
 
 public abstract class PrimitiveUnionValueImpl<T> extends UnionValueImpl<T> implements PrimitiveUnionValue<T> {
 
-    public PrimitiveUnionValueImpl() {
-    }
+	public PrimitiveUnionValueImpl() {
+	}
 
-    public PrimitiveUnionValueImpl(T value) {
-        super(value);
-    }
+	public PrimitiveUnionValueImpl(T value) {
+		super(value);
+	}
 
 }

@@ -2,8 +2,9 @@ package io.apicurio.umg.pipe.concept;
 
 import io.apicurio.umg.models.concept.NamespaceModel;
 import io.apicurio.umg.models.concept.TraitModel;
+import io.apicurio.umg.models.concept.typelike.TraitTypeLike;
 import io.apicurio.umg.pipe.AbstractStage;
-import io.apicurio.umg.pipe.Util;
+import io.apicurio.umg.pipe.Utils;
 
 public class CreateTraitModelsStage extends AbstractStage {
 
@@ -17,15 +18,18 @@ public class CreateTraitModelsStage extends AbstractStage {
                         .namespace(nsModel)
                         .name(trait.getName())
                         .specVersion(specVersion)
-                        .transparent(Util.nullableBoolean(trait.getTransparent()))
+                        .transparent(Utils.nullableBoolean(trait.getTransparent()))
                         .leaf(true)
                         .build();
+
                 info("Created trait model: %s", traitModel.fullyQualifiedName());
 
                 // Add trait to namespace
                 nsModel.getTraits().put(traitModel.getName(), traitModel);
                 // Index the model
                 getState().getConceptIndex().index(traitModel);
+
+                getState().getConceptIndex().lookupOrIndex(TraitTypeLike.fromTrait(traitModel));
             });
         });
     }

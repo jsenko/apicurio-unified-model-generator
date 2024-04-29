@@ -37,11 +37,11 @@ public abstract class AbstractStage implements Stage {
     }
 
     protected boolean isEntityList(PropertyModel property) {
-        return property.getType().isList() && property.getType().getNested().iterator().next().isEntityType();
+        return property.getType().isEntityListType();
     }
 
     protected boolean isEntityMap(PropertyModel property) {
-        return property.getType().isMap() && property.getType().getNested().iterator().next().isEntityType();
+        return property.getType().isEntityMapType();
     }
 
     protected boolean isEntity(PropertyModel property) {
@@ -49,7 +49,7 @@ public abstract class AbstractStage implements Stage {
     }
 
     protected boolean isUnion(PropertyModel property) {
-        return property.getType().isUnion();
+        return property.getType().isUnionType();
     }
 
     protected boolean isPrimitive(PropertyModel property) {
@@ -57,11 +57,11 @@ public abstract class AbstractStage implements Stage {
     }
 
     protected boolean isPrimitiveList(PropertyModel property) {
-        return property.getType().isList() && property.getType().getNested().iterator().next().isPrimitiveType();
+        return property.getType().isPrimitiveListType();
     }
 
     protected boolean isPrimitiveMap(PropertyModel property) {
-        return property.getType().isMap() && property.getType().getNested().iterator().next().isPrimitiveType();
+        return property.getType().isPrimitiveMapType();
     }
 
     protected String singularize(String name) {

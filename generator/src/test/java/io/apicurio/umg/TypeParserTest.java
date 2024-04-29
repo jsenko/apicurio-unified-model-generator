@@ -1,78 +1,77 @@
 package io.apicurio.umg;
 
-import java.util.Set;
-
+import io.apicurio.umg.models.concept.type.RawType;
 import org.junit.Assert;
 import org.junit.Test;
 
-import io.apicurio.umg.models.concept.PropertyType;
+import java.util.List;
 
 public class TypeParserTest {
 
     @Test
     public void run() throws Exception {
 
-        PropertyType.parse("foo");
-        PropertyType.parse("foo|bar");
-        PropertyType.parse("foo|bar|baz");
-        PropertyType.parse("{foo|bar}");
-        PropertyType.parse("{{foo|bar}}");
-        PropertyType.parse("{[foo]|{bar}|baz}|quox");
+        RawType.parse("foo");
+        RawType.parse("foo|bar");
+        RawType.parse("foo|bar|baz");
+        RawType.parse("{foo|bar}");
+        RawType.parse("{{foo|bar}}");
+        RawType.parse("{[foo]|{bar}|baz}|quox");
 
         Assert.assertEquals(
-                PropertyType.builder().simple(true).simpleType("foo").build(),
-                PropertyType.parse("foo"));
+                RawType.builder().simple(true).simpleType("foo").build(),
+                RawType.parse("foo"));
 
         Assert.assertEquals(
-                PropertyType.builder().union(true).nested(Set.of(
-                        PropertyType.builder().simple(true).simpleType("foo").build(),
-                        PropertyType.builder().simple(true).simpleType("bar").build()
+                RawType.builder().union(true).nested(List.of(
+                        RawType.builder().simple(true).simpleType("foo").build(),
+                        RawType.builder().simple(true).simpleType("bar").build()
                         )).build(),
-                PropertyType.parse("foo|bar"));
+                RawType.parse("foo|bar"));
 
         Assert.assertEquals(
-                PropertyType.builder().union(true).nested(Set.of(
-                        PropertyType.builder().simple(true).simpleType("foo").build(),
-                        PropertyType.builder().simple(true).simpleType("bar").build(),
-                        PropertyType.builder().simple(true).simpleType("baz").build()
+                RawType.builder().union(true).nested(List.of(
+                        RawType.builder().simple(true).simpleType("foo").build(),
+                        RawType.builder().simple(true).simpleType("bar").build(),
+                        RawType.builder().simple(true).simpleType("baz").build()
                         )).build(),
-                PropertyType.parse("foo|bar|baz"));
+                RawType.parse("foo|bar|baz"));
 
         Assert.assertEquals(
-                PropertyType.builder().map(true).nested(Set.of(
-                        PropertyType.builder().union(true).nested(Set.of(
-                                PropertyType.builder().simple(true).simpleType("foo").build(),
-                                PropertyType.builder().simple(true).simpleType("bar").build()
+                RawType.builder().map(true).nested(List.of(
+                        RawType.builder().union(true).nested(List.of(
+                                RawType.builder().simple(true).simpleType("foo").build(),
+                                RawType.builder().simple(true).simpleType("bar").build()
                                 )).build()
                         )).build(),
-                PropertyType.parse("{foo|bar}"));
+                RawType.parse("{foo|bar}"));
 
         Assert.assertEquals(
-                PropertyType.builder().map(true).nested(Set.of(
-                        PropertyType.builder().map(true).nested(Set.of(
-                                PropertyType.builder().union(true).nested(Set.of(
-                                        PropertyType.builder().simple(true).simpleType("foo").build(),
-                                        PropertyType.builder().simple(true).simpleType("bar").build()
+                RawType.builder().map(true).nested(List.of(
+                        RawType.builder().map(true).nested(List.of(
+                                RawType.builder().union(true).nested(List.of(
+                                        RawType.builder().simple(true).simpleType("foo").build(),
+                                        RawType.builder().simple(true).simpleType("bar").build()
                                         )).build()
                                 )).build()
                         )).build(),
-                PropertyType.parse("{{foo|bar}}"));
+                RawType.parse("{{foo|bar}}"));
 
         Assert.assertEquals(
-                PropertyType.builder().union(true).nested(Set.of(
-                        PropertyType.builder().map(true).nested(Set.of(
-                                PropertyType.builder().union(true).nested(Set.of(
-                                        PropertyType.builder().list(true).nested(Set.of(
-                                                PropertyType.builder().simple(true).simpleType("foo").build()
+                RawType.builder().union(true).nested(List.of(
+                        RawType.builder().map(true).nested(List.of(
+                                RawType.builder().union(true).nested(List.of(
+                                        RawType.builder().list(true).nested(List.of(
+                                                RawType.builder().simple(true).simpleType("foo").build()
                                                 )).build(),
-                                        PropertyType.builder().map(true).nested(Set.of(
-                                                PropertyType.builder().simple(true).simpleType("bar").build()
+                                        RawType.builder().map(true).nested(List.of(
+                                                RawType.builder().simple(true).simpleType("bar").build()
                                                 )).build(),
-                                        PropertyType.builder().simple(true).simpleType("baz").build()
+                                        RawType.builder().simple(true).simpleType("baz").build()
                                         )).build()
                                 )).build(),
-                        PropertyType.builder().simple(true).simpleType("quox").build()
+                        RawType.builder().simple(true).simpleType("quox").build()
                         )).build(),
-                PropertyType.parse("{[foo]|{bar}|baz}|quox"));
+                RawType.parse("{[foo]|{bar}|baz}|quox"));
     }
 }

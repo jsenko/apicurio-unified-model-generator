@@ -1,15 +1,15 @@
-package io.apicurio.umg.base.visitors;
+package io.apicurio.datamodels.models.visitors;
 
-import java.util.Collection;
+import io.apicurio.datamodels.models.Any;
+import io.apicurio.datamodels.models.MappedNode;
+import io.apicurio.datamodels.models.Node;
+import io.apicurio.datamodels.models.union.ListUnionValue;
+import io.apicurio.datamodels.models.union.MapUnionValue;
+import io.apicurio.datamodels.models.union.Union;
+import io.apicurio.datamodels.models.util.JsonUtil;
+
+import java.util.List;
 import java.util.Map;
-
-import io.apicurio.umg.base.MappedNode;
-import io.apicurio.umg.base.Node;
-import io.apicurio.umg.base.Visitable;
-import io.apicurio.umg.base.union.EntityListUnionValue;
-import io.apicurio.umg.base.union.EntityMapUnionValue;
-import io.apicurio.umg.base.union.Union;
-import io.apicurio.umg.base.util.JsonUtil;
 
 /**
  * Base class for all traversers.
@@ -19,11 +19,6 @@ public abstract class AbstractTraverser implements Traverser, Visitor {
     protected final Visitor visitor;
     protected final TraversalContextImpl traversalContext = new TraversalContextImpl();
 
-    /**
-     * C'tor.
-     *
-     * @param visitor
-     */
     public AbstractTraverser(Visitor visitor) {
         this.visitor = visitor;
         if (visitor instanceof TraversingVisitor) {
@@ -33,20 +28,15 @@ public abstract class AbstractTraverser implements Traverser, Visitor {
 
     /**
      * Traverse the given node. Guaranteed to not be null here.
-     *
-     * @param node
      */
-    protected void doTraverseNode(Visitable node) {
+    protected void doTraverseNode(Node node) {
         node.accept(this);
     }
 
     /**
      * Traverse into the given node, unless it's null.
-     *
-     * @param propertyName
-     * @param node
      */
-    protected void traverseNode(String propertyName, Visitable node) {
+    protected void traverseNode(String propertyName, Node node) {
         if (node != null) {
             traversalContext.pushProperty(propertyName);
             doTraverseNode(node);
@@ -56,20 +46,17 @@ public abstract class AbstractTraverser implements Traverser, Visitor {
 
     /**
      * Traverse the items of the given array.
-     *
-     * @param propertyName
-     * @param items
      */
-    @SuppressWarnings("unchecked")
-    protected void traverseList(String propertyName, Collection<? extends Node> items) {
-        if (items != null) {
+    protected void traverseAnyList(String propertyName, List<? extends Any> list) {
+        if (list != null) {
             int index = 0;
             traversalContext.pushProperty(propertyName);
-            Collection<? extends Node> clonedItems = (Collection<? extends Node>) JsonUtil.cloneCollection(items);
-            for (Node node : clonedItems) {
-                if (node != null) {
+            @SuppressWarnings("unchecked")
+            List<Any> clonedList = JsonUtil.cloneAsList((List<Any>) list);
+            for (Any node : clonedList) {
+                if (node != null && node.isNode()) {
                     traversalContext.pushListIndex(index);
-                    doTraverseNode(node);
+                    doTraverseNode((Node) node);
                     traversalContext.pop();
                 }
                 index++;
@@ -80,21 +67,17 @@ public abstract class AbstractTraverser implements Traverser, Visitor {
 
     /**
      * Traverse the items of the given map.
-     *
-     * @param propertyName
-     * @param items
      */
-    @SuppressWarnings("unchecked")
-    protected void traverseMap(String propertyName, Map<String, ? extends Node> items) {
-        if (items != null) {
+    protected void traverseAnyMap(String propertyName, Map<String, ? extends Any> map) {
+        if (map != null) {
             traversalContext.pushProperty(propertyName);
-            Collection<String> keys = (Collection<String>) JsonUtil.cloneCollection(items.keySet());
+            List<String> keys = JsonUtil.cloneAsList(map.keySet());
             keys.forEach(key -> {
-                Node value = items.get(key);
-                if (value != null) {
-                    this.traversalContext.pushMapIndex(key);
-                    this.doTraverseNode(value);
-                    this.traversalContext.pop();
+                Any value = map.get(key);
+                if (value != null && value.isNode()) {
+                    traversalContext.pushMapIndex(key);
+                    doTraverseNode((Node) value);
+                    traversalContext.pop();
                 }
             });
             this.traversalContext.pop();
@@ -103,41 +86,37 @@ public abstract class AbstractTraverser implements Traverser, Visitor {
 
     /**
      * Traverse the items of the given mapped node.
-     *
-     * @param items
      */
-    @SuppressWarnings("unchecked")
-    protected void traverseMappedNode(MappedNode<? extends Node> mappedNode) {
+    protected void traverseMappedNode(MappedNode<Any> mappedNode) { // TODO How to distinguish from primitives?
         if (mappedNode != null) {
-            Collection<String> names = (Collection<String>) JsonUtil.cloneCollection(mappedNode.getItemNames());
+            List<String> names = JsonUtil.cloneAsList(mappedNode.getItemNames());
             names.forEach(name -> {
-                Node value = mappedNode.getItem(name);
-                if (value != null) {
-                    this.traversalContext.pushMapIndex(name);
-                    this.doTraverseNode(value);
-                    this.traversalContext.pop();
+                Any item = mappedNode.getItem(name);
+                if (item != null && item.isNode()) {
+                    traversalContext.pushMapIndex(name);
+                    doTraverseNode((Node) item);
+                    traversalContext.pop();
                 }
             });
         }
     }
 
     /**
-     * Traverse a union property.  Traversal of a union property only needs to happen if
-     * the value of the union is an entity or an entity collection.
-     * @param propertyName
-     * @param union
+     * Traverse a union property. Traversal of a union property only needs to happen
+     * if the value of the union is an entity or an entity collection.
      */
-    @SuppressWarnings("unchecked")
     protected void traverseUnion(String propertyName, Union union) {
         if (union != null) {
-            if (union.isEntity()) {
-                this.traverseNode(propertyName, union);
-            } else if (union.isEntityList()) {
-                EntityListUnionValue<? extends Node> value = (EntityListUnionValue<? extends Node>) union;
-                this.traverseList(propertyName, value.getValue());
-            } else if (union.isEntityMap()) {
-                EntityMapUnionValue<? extends Node> value = (EntityMapUnionValue<? extends Node>) union;
-                this.traverseMap(propertyName, value.getValue());
+            if (union.isNode()) {
+                traverseNode(propertyName, (Node) union);
+            } else if (union.isListUnionValueWithAny()) {
+                @SuppressWarnings("unchecked")
+                List<Any> values = ((ListUnionValue<Any>) union).getUnionValue();
+                traverseAnyList(propertyName, values);
+            } else if (union.isMapUnionValueWithAny()) {
+                @SuppressWarnings("unchecked")
+                Map<String, Any> values = ((MapUnionValue<Any>) union).getUnionValue();
+                traverseAnyMap(propertyName, values);
             }
         }
     }
@@ -145,12 +124,9 @@ public abstract class AbstractTraverser implements Traverser, Visitor {
     /**
      * Called to traverse the data model starting at the given node and traversing
      * down until this node and all child nodes have been visited.
-     *
-     * @param node
      */
     @Override
     public void traverse(Node node) {
         node.accept(this);
     }
-
 }

@@ -1,39 +1,36 @@
-package io.apicurio.umg.base;
+package io.apicurio.datamodels.models;
 
 import java.util.List;
 
-public interface MappedNode<T> {
+public interface MappedNode<T> extends Node {
 
     /**
-     * Gets a single item (indexed child) by name. Returns undefined if not found.
-     * 
-     * @param name
+     * Gets a child item by name.
+     *
+     * @return <code>null</code> if not found.
      */
-    public T getItem(String name);
+    T getItem(String name);
 
     /**
-     * Returns an array of all the child items.
+     * @return an unmodifiable list of all child items, in order.
      */
-    public List<T> getItems();
+    List<T> getItems();
 
     /**
-     * Gets a list of the names of all indexed children.
+     * @return an unmodifiable list of names of all child items, in order.
      */
-    public List<String> getItemNames();
+    List<String> getItemNames();
 
     /**
-     * Adds a child item.
-     * 
-     * @param name
-     * @param item
+     * Adds a child item under the given name.
+     * Order of insertion is preserved.
      */
-    public void addItem(String name, T item);
+    void addItem(String name, T item);
 
     /**
-     * Removes a child item by name and returns the deleted child or undefined if there wasn't one.
-     * 
-     * @param name
+     * Removes a child item by name.
+     *
+     * @return the removed item or <code>null</code> if not found.
      */
-    public T removeItem(String name);
-
+    T removeItem(String name);
 }

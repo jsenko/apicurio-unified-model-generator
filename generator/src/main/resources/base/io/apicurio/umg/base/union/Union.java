@@ -1,15 +1,8 @@
-package io.apicurio.umg.base.union;
+package io.apicurio.datamodels.models.union;
 
-import io.apicurio.umg.base.Visitable;
+import io.apicurio.datamodels.models.Any;
 
-public interface Union extends Visitable {
+public interface Union extends Any {
 
-    public Object unionValue();
-
-    public boolean isEntity();
-
-    public boolean isEntityList();
-
-    public boolean isEntityMap();
-
+	Object getUnionValue();
 }

@@ -1,0 +1,468 @@
+name: JSON Schema Draft 6
+version: draft-6
+versions:
+  - version: draft-6
+    url: https://tools.ietf.org/html/draft-wright-json-schema-validation-01
+prefix: JD6
+namespace: io.apicurio.datamodels.models.jsonschema.vdraft6
+# NOTES:
+# - Keep everything in alphabetical order please
+# - Release notes: https://json-schema.org/draft-06/json-schema-release-notes.html
+
+root:
+  type: Schema
+
+typeAliases:
+
+  - name: Schema
+    type: ArraySchema|BooleanSchema|ComplexSchema|EmptySchema|IntegerSchema|NullSchema|NumberSchema|ObjectSchema|Reference|StringSchema
+    unionRules:
+      - unionType: ArraySchema
+        ruleType: IsJsonObjectWithPropertyValue
+        name: type
+        jsonType: string
+        jsonValue: array
+      - unionType: BooleanSchema
+        ruleType: IsJsonObjectWithPropertyValue
+        name: type
+        jsonType: string
+        jsonValue: boolean
+      - unionType: ComplexSchema
+        ruleType: IsJsonObjectWithPropertyTypes
+        name: type
+        jsonTypes: [ array ]
+      - unionType: EmptySchema # TODO: Clashes with Reference. We need AND operator.
+        ruleType: IsJsonObjectWithoutPropertyName
+        name: type
+      - unionType: IntegerSchema
+        ruleType: IsJsonObjectWithPropertyValue
+        name: type
+        jsonType: string
+        jsonValue: integer
+      - unionType: NullSchema
+        ruleType: IsJsonObjectWithPropertyValue
+        name: type
+        jsonType: string
+        jsonValue: "null"
+      - unionType: NumberSchema
+        ruleType: IsJsonObjectWithPropertyValue
+        name: type
+        jsonType: string
+        jsonValue: number
+      - unionType: ObjectSchema
+        ruleType: IsJsonObjectWithPropertyValue
+        name: type
+        jsonType: string
+        jsonValue: object
+      - unionType: Reference
+        ruleType: IsJsonObjectWithPropertyTypes
+        name: $ref
+        jsonTypes: [ string ]
+      - unionType: StringSchema
+        ruleType: IsJsonObjectWithPropertyValue
+        name: type
+        jsonType: string
+        jsonValue: string
+  - name: SchemaExt
+    type: ArraySchema|BooleanSchema|ComplexSchema|EmptySchema|IntegerSchema|NullSchema|NumberSchema|ObjectSchema|Reference|StringSchema|boolean
+    unionRules:
+      - unionType: ArraySchema
+        ruleType: IsJsonObjectWithPropertyValue
+        name: type
+        jsonType: string
+        jsonValue: array
+      - unionType: BooleanSchema
+        ruleType: IsJsonObjectWithPropertyValue
+        name: type
+        jsonType: string
+        jsonValue: boolean
+      - unionType: ComplexSchema
+        ruleType: IsJsonObjectWithPropertyTypes
+        name: type
+        jsonTypes: [ array ]
+      - unionType: EmptySchema
+        ruleType: IsJsonObjectWithoutPropertyName
+        name: type
+      - unionType: IntegerSchema
+        ruleType: IsJsonObjectWithPropertyValue
+        name: type
+        jsonType: string
+        jsonValue: integer
+      - unionType: NullSchema
+        ruleType: IsJsonObjectWithPropertyValue
+        name: type
+        jsonType: string
+        jsonValue: "null"
+      - unionType: NumberSchema
+        ruleType: IsJsonObjectWithPropertyValue
+        name: type
+        jsonType: string
+        jsonValue: number
+      - unionType: ObjectSchema
+        ruleType: IsJsonObjectWithPropertyValue
+        name: type
+        jsonType: string
+        jsonValue: object
+      - unionType: Reference
+        ruleType: IsJsonObjectWithPropertyTypes
+        name: $ref
+        jsonTypes: [ string ]
+      - unionType: StringSchema
+        ruleType: IsJsonObjectWithPropertyValue
+        name: type
+        jsonType: string
+        jsonValue: string
+      - unionType: boolean
+        ruleType: IsJsonTypes
+        jsonTypes: [ boolean ]
+  - name: Dependency
+    type: EmptySchema|ObjectSchema|Reference|boolean|[string]
+    unionRules:
+      - unionType: EmptySchema
+        ruleType: IsJsonObjectWithoutPropertyName
+        name: type
+      - unionType: ObjectSchema
+        ruleType: IsJsonObjectWithPropertyValue
+        name: type
+        jsonType: string
+        jsonValue: object
+      - unionType: Reference
+        ruleType: IsJsonObjectWithPropertyTypes
+        name: $ref
+        jsonTypes: [ string ]
+      - unionType: boolean
+        ruleType: IsJsonTypes
+        jsonTypes: [ boolean ]
+      - unionType: "[string]"
+        ruleType: IsJsonTypes
+        jsonTypes: [ array ]
+
+traits:
+
+  - name: AllOf
+    properties:
+      - name: allOf
+        type: "[SchemaExt]"
+
+  - name: AnyOf
+    properties:
+      - name: anyOf
+        type: "[SchemaExt]"
+
+  - name: Const
+    properties:
+      - name: const
+        type: any
+
+  - name: Definitions
+    properties:
+      - name: definitions
+        type: "[any]"
+
+  - name: Enum
+    properties:
+      - name: enum
+        type: "[any]"
+
+  - name: Metadata
+    transparent: true
+    properties:
+      - name: default
+        type: any
+      - name: description
+        type: string
+      - name: examples
+        type: "[any]"
+      - name: title
+        type: string
+      - name: $id
+        type: string
+      - name: $schema
+        type: string
+
+  - name: Not
+    properties:
+      - name: not
+        type: SchemaExt
+
+  - name: Numeric
+    transparent: true
+    properties:
+      - name: exclusiveMaximum
+        type: number
+      - name: exclusiveMinimum
+        type: number
+      - name: maximum
+        type: number
+      - name: minimum
+        type: number
+      - name: multipleOf
+        type: integer
+
+  - name: OneOf
+    properties:
+      - name: oneOf
+        type: "[SchemaExt]"
+
+entities:
+
+  - name: ArraySchema
+    traits:
+      - AllOf
+      - AnyOf
+      - Const
+      - Definitions
+      - Enum
+      - Metadata
+      - Not
+      - OneOf
+    properties:
+      - name: additionalItems
+        type: SchemaExt
+      - name: contains
+        type: SchemaExt
+      - name: items
+        type: SchemaExt|[SchemaExt]
+      - name: maxItems
+        type: integer
+      - name: minItems
+        type: integer
+      - name: type
+        type: string
+      - name: uniqueItems
+        type: boolean
+    propertyOrder:
+      - $AllOf
+      - $AnyOf
+      - $Const
+      - $Definitions
+      - $Enum
+      - $Metadata
+      - $Not
+      - $OneOf
+      - $this
+
+  - name: BooleanSchema
+    traits:
+      - AllOf
+      - AnyOf
+      - Const
+      - Definitions
+      - Enum
+      - Metadata
+      - Not
+      - OneOf
+    properties:
+      - name: type
+        type: string
+    propertyOrder:
+      - $AllOf
+      - $AnyOf
+      - $Const
+      - $Definitions
+      - $Enum
+      - $Metadata
+      - $Not
+      - $OneOf
+      - $this
+
+  - name: ComplexSchema
+    properties:
+      - name: type
+        type: "[string]"
+      - name: "*"
+        type: any
+    propertyOrder:
+      - $this
+
+  - name: EmptySchema
+    traits:
+      - AllOf
+      - AnyOf
+      - Const
+      - Definitions
+      - Enum
+      - Metadata
+      - Not
+      - OneOf
+    properties: [ ]
+    propertyOrder:
+      - $AllOf
+      - $AnyOf
+      - $Const
+      - $Definitions
+      - $Enum
+      - $Metadata
+      - $Not
+      - $OneOf
+      - $this
+
+  - name: IntegerSchema
+    traits:
+      - AllOf
+      - AnyOf
+      - Const
+      - Definitions
+      - Enum
+      - Metadata
+      - Not
+      - Numeric
+      - OneOf
+    properties:
+      - name: type
+        type: string
+    propertyOrder:
+      - $AllOf
+      - $AnyOf
+      - $Const
+      - $Definitions
+      - $Enum
+      - $Metadata
+      - $Not
+      - $Numeric
+      - $OneOf
+      - $this
+
+  - name: NullSchema
+    traits:
+      - AllOf
+      - AnyOf
+      - Const
+      - Definitions
+      - Enum
+      - Metadata
+      - Not
+      - OneOf
+    properties:
+      - name: type
+        type: string
+    propertyOrder:
+      - $AllOf
+      - $AnyOf
+      - $Const
+      - $Definitions
+      - $Enum
+      - $Metadata
+      - $Not
+      - $OneOf
+      - $this
+
+  - name: NumberSchema
+    traits:
+      - AllOf
+      - AnyOf
+      - Const
+      - Definitions
+      - Enum
+      - Metadata
+      - Not
+      - Numeric
+      - OneOf
+    properties:
+      - name: type
+        type: string
+    propertyOrder:
+      - $AllOf
+      - $AnyOf
+      - $Const
+      - $Definitions
+      - $Enum
+      - $Metadata
+      - $Not
+      - $Numeric
+      - $OneOf
+      - $this
+
+  - name: ObjectSchema
+    traits:
+      - AllOf
+      - AnyOf
+      - Const
+      - Definitions
+      - Enum
+      - Metadata
+      - Not
+      - OneOf
+    properties:
+      - name: additionalProperties
+        type: "{SchemaExt}"
+      - name: dependencies
+        type: "{Dependency}"
+      - name: maxProperties
+        type: integer
+      - name: minProperties
+        type: integer
+      - name: patternProperties
+        type: "{SchemaExt}"
+      - name: properties
+        type: "{SchemaExt}"
+      - name: propertyNames
+        type: EmptySchema|StringSchema|boolean
+        unionRules:
+          - unionType: EmptySchema
+            ruleType: IsJsonObjectWithoutPropertyName
+            name: type
+          - unionType: StringSchema
+            ruleType: IsJsonObjectWithPropertyValue
+            name: type
+            jsonType: string
+            jsonValue: string
+          - unionType: boolean
+            ruleType: IsJsonTypes
+            jsonTypes: [ boolean ]
+      - name: required
+        type: "[string]"
+      - name: type
+        type: string
+    propertyOrder:
+      - $AllOf
+      - $AnyOf
+      - $Const
+      - $Definitions
+      - $Enum
+      - $Metadata
+      - $Not
+      - $OneOf
+      - $this
+
+  - name: Reference
+    traits:
+      - Metadata
+    properties:
+      - name: $ref
+        type: string
+    propertyOrder:
+      - $Metadata
+      - $this
+
+  - name: StringSchema
+    traits:
+      - AllOf
+      - AnyOf
+      - Const
+      - Definitions
+      - Enum
+      - Metadata
+      - Not
+      - OneOf
+    properties:
+      - name: format
+        type: string
+      - name: maxLength
+        type: integer
+      - name: minLength
+        type: integer
+      - name: pattern
+        type: string
+      - name: type
+        type: string
+    propertyOrder:
+      - $AllOf
+      - $AnyOf
+      - $Const
+      - $Definitions
+      - $Enum
+      - $Metadata
+      - $Not
+      - $OneOf
+      - $this

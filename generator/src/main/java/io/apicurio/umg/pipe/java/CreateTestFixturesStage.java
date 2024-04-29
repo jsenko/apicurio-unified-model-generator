@@ -1,15 +1,5 @@
 package io.apicurio.umg.pipe.java;
 
-import java.io.File;
-import java.io.IOException;
-import java.security.SecureRandom;
-import java.util.Collections;
-import java.util.Random;
-import java.util.Stack;
-import java.util.UUID;
-import java.util.function.Function;
-import java.util.function.Supplier;
-
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.util.MinimalPrettyPrinter;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -19,13 +9,24 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.NullNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.github.curiousoddman.rgxgen.RgxGen;
-
 import io.apicurio.umg.beans.SpecificationVersion;
 import io.apicurio.umg.models.concept.EntityModel;
 import io.apicurio.umg.models.concept.NamespaceModel;
 import io.apicurio.umg.models.concept.PropertyModel;
-import io.apicurio.umg.models.concept.PropertyType;
+import io.apicurio.umg.models.concept.type.RawType;
+import io.apicurio.umg.models.concept.type.PrimitiveType;
 import io.apicurio.umg.pipe.AbstractStage;
+
+import java.io.File;
+import java.io.IOException;
+import java.security.SecureRandom;
+import java.util.Random;
+import java.util.Stack;
+import java.util.UUID;
+import java.util.function.Function;
+import java.util.function.Supplier;
+
+import static io.apicurio.umg.models.concept.ConceptUtils.asStringMapOf;
 
 public class CreateTestFixturesStage extends AbstractStage {
 
@@ -36,24 +37,27 @@ public class CreateTestFixturesStage extends AbstractStage {
     public static ObjectNode objectNode() {
         return factory.objectNode();
     }
+
     public static ArrayNode arrayNode() {
         return factory.arrayNode();
     }
+
     public static NullNode nullNode() {
         return factory.nullNode();
     }
 
     @Override
     protected void doProcess() {
-        if (getState().getConfig().isGenerateTestFixtures()) {
-            getState().getSpecIndex().getAllSpecificationVersions().forEach(specVersion -> {
-                getState().getConceptIndex().findEntities(specVersion.getNamespace()).stream().filter(entity -> entity.isRoot()).forEach(entity -> {
-                    generateIOFixture(specVersion, entity);
-                });
-            });
-        } else {
-            info("Skipping generation of test fixtures.");
-        }
+        // TODO
+//        if (getState().getConfig().isGenerateTestFixtures()) {
+//            getState().getSpecIndex().getAllSpecificationVersions().forEach(specVersion -> {
+//                getState().getConceptIndex().findEntities(specVersion.getNamespace()).stream().filter(entity -> entity.isRoot()).forEach(entity -> {
+//                    generateIOFixture(specVersion, entity);
+//                });
+//            });
+//        } else {
+//            info("Skipping generation of test fixtures.");
+//        }
     }
 
     private void generateIOFixture(SpecificationVersion specVersion, EntityModel entity) {
@@ -91,18 +95,10 @@ public class CreateTestFixturesStage extends AbstractStage {
 
     private JsonNode generatePropertyValue(EntityModel entity, PropertyModel property, Stack<String> entityStack) {
         if (isStarProperty(property)) {
-            PropertyType mappedType = PropertyType.builder()
-                    .nested(Collections.singleton(property.getType()))
-                    .map(true)
-                    .build();
-            PropertyModel itemsProperty = PropertyModel.builder().name("_items").type(mappedType).build();
+            PropertyModel itemsProperty = asStringMapOf("_items", property);
             return generatePropertyValue(entity, itemsProperty, entityStack);
         } else if (isRegexProperty(property)) {
-            PropertyType mappedType = PropertyType.builder()
-                    .nested(Collections.singleton(property.getType()))
-                    .map(true)
-                    .build();
-            PropertyModel itemsProperty = PropertyModel.builder().name(property.getCollection()).collection(property.getName()).type(mappedType).build();
+            PropertyModel itemsProperty = asStringMapOf(property.getCollection(), property);
             return generatePropertyValue(entity, itemsProperty, entityStack);
         } else if (isPrimitive(property)) {
             return generatePrimitiveValue(property);
@@ -111,12 +107,12 @@ public class CreateTestFixturesStage extends AbstractStage {
         } else if (isPrimitiveMap(property)) {
             return generatePrimitiveMapValue(property);
         } else if (isEntity(property)) {
-            EntityModel propertyEntity = resolveEntity(entity.getNamespace(), property.getType().getSimpleType());
+            EntityModel propertyEntity = resolveEntity(entity.getNamespace(), property.getType().getName());
             if (propertyEntity != null) {
                 return generateEntityFixture(propertyEntity, entityStack);
             }
         } else if (isEntityList(property)) {
-            PropertyType listEntityType = property.getType().getNested().iterator().next();
+            RawType listEntityType = property.getType().getRawType().getNested().iterator().next();
             EntityModel propertyEntity = resolveEntity(entity.getNamespace(), listEntityType.getSimpleType());
             if (propertyEntity != null) {
                 return generateListValue(() -> {
@@ -125,7 +121,7 @@ public class CreateTestFixturesStage extends AbstractStage {
                 });
             }
         } else if (isEntityMap(property)) {
-            PropertyType mapEntityType = property.getType().getNested().iterator().next();
+            RawType mapEntityType = property.getType().getRawType().getNested().iterator().next();
             EntityModel propertyEntity = resolveEntity(entity.getNamespace(), mapEntityType.getSimpleType());
             if (propertyEntity != null) {
                 return generateEntityMapValue(property, propertyEntity, entityStack);
@@ -141,7 +137,7 @@ public class CreateTestFixturesStage extends AbstractStage {
     }
 
     private JsonNode generatePrimitiveValue(PropertyModel property) {
-        switch (property.getType().getSimpleType()) {
+        switch (property.getType().getName()) {
             case "string":
                 String val = UUID.randomUUID().toString().substring(10, 18);
                 return factory.textNode(property.getName() + "-" + val);
@@ -171,7 +167,9 @@ public class CreateTestFixturesStage extends AbstractStage {
 
     private JsonNode generatePrimitiveListValue(PropertyModel property) {
         PropertyModel primitiveProperty = PropertyModel.builder().name("_tmp").type(
-                property.getType().getNested().iterator().next()).build();
+                        PrimitiveType.getByRawType(property.getType().getRawType().getNested().iterator().next().asRawType())
+                )
+                .build();
         return generateListValue(() -> {
             return generatePrimitiveValue(primitiveProperty);
         });
@@ -179,12 +177,13 @@ public class CreateTestFixturesStage extends AbstractStage {
 
     private JsonNode generatePrimitiveMapValue(PropertyModel property) {
         PropertyModel primitiveProperty = PropertyModel.builder().name("_tmp").type(
-                property.getType().getNested().iterator().next()).build();
+                PrimitiveType.getByRawType(property.getType().getRawType().getNested().iterator().next().asRawType())
+        ).build();
         if (property.getCollection() != null) {
             RgxGen rgxGen = new RgxGen(extractRegex(property.getCollection()));
             return generateMapValue((index) -> {
                 return rgxGen.generate(random);
-            },() -> {
+            }, () -> {
                 return generatePrimitiveValue(primitiveProperty);
             });
         } else {

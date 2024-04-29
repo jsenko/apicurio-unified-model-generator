@@ -16,33 +16,32 @@
 
 package io.apicurio.umg.logging;
 
+import static java.lang.System.err;
+import static java.lang.System.out;
+
 /**
  * @author eric.wittmann@gmail.com
  */
 public class Logger {
 
-    public static final void info(String message, Object ...args) {
-        String formattedMsg = String.format(message, args);
-        System.out.println("INFO:  " + formattedMsg);
+    public static void info(String message, Object... args) {
+        out.println("INFO:  " + String.format(message, args));
     }
 
-    public static final void debug(String message, Object ...args) {
-        String formattedMsg = String.format(message, args);
-        System.out.println("DEBUG: " + formattedMsg);
+    public static void debug(String message, Object... args) {
+        out.println("DEBUG: " + String.format(message, args));
     }
 
-    public static final void warn(String message, Object ...args) {
-        String formattedMsg = String.format(message, args);
-        System.err.println("WARN:  " + formattedMsg);
+    public static void warn(String message, Object... args) {
+        err.println("WARN:  " + String.format(message, args));
     }
 
-    public static final void error(String message, Object ...args) {
-        String formattedMsg = String.format(message, args);
-        System.err.println("ERROR: " + formattedMsg);
+    public static void error(String message, Object... args) {
+        err.println("ERROR: " + String.format(message, args));
     }
 
-    public static final void error(Throwable t) {
-        t.printStackTrace(System.err);
+    public static void error(Throwable t) {
+        error(t.getMessage());
+        t.printStackTrace(err);
     }
-
 }

@@ -16,24 +16,21 @@
 
 package io.apicurio.umg.index.concept;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-
+import io.apicurio.umg.models.concept.*;
+import io.apicurio.umg.models.concept.type.EntityType;
+import io.apicurio.umg.models.concept.type.Type;
+import io.apicurio.umg.models.concept.typelike.TraitTypeLike;
+import io.apicurio.umg.models.concept.typelike.TypeLike;
 import org.apache.commons.collections4.Trie;
 import org.apache.commons.collections4.trie.PatriciaTrie;
 
-import io.apicurio.umg.models.concept.EntityModel;
-import io.apicurio.umg.models.concept.NamespaceModel;
-import io.apicurio.umg.models.concept.PropertyModelWithOrigin;
-import io.apicurio.umg.models.concept.PropertyModelWithOriginComparator;
-import io.apicurio.umg.models.concept.TraitModel;
-import io.apicurio.umg.models.concept.VisitorModel;
+import java.util.*;
+import java.util.function.Function;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static io.apicurio.umg.logging.Errors.assertion;
 
 /**
  * @author eric.wittmann@gmail.com
@@ -46,6 +43,57 @@ public class ConceptIndex {
     private Trie<String, VisitorModel> visitorIndex = new PatriciaTrie<>();
     private Map<String, PropertyModelWithOriginComparator> propertyComparatorIndex = new HashMap<>();
 
+    private final Map<String, TypeLike> typeIndex = new HashMap<>();
+
+    // ========= Types
+
+    public void index(Type model) {
+        var key = model.getNamespace() + "." + model.getName();
+        typeIndex.put(key, model);
+    }
+
+    public <T extends TypeLike> T lookupOrIndex(T newType) {
+        // Optimize later
+        var key = newType.getNamespace() + "." + newType.getName();
+        TypeLike type = typeIndex.get(key);
+        if (type == null) {
+            type = newType;
+            typeIndex.put(key, type);
+        }
+        return (T) type;
+    }
+
+    public <T extends TypeLike> T lookupOrIndex(String namespace, String name, Supplier<T> typeSupplier) {
+        var key = namespace + "." + name;
+        TypeLike type = typeIndex.get(key);
+        if (type == null) {
+            type = typeSupplier.get();
+            typeIndex.put(key, type);
+        }
+        return (T) type;
+    }
+
+    public Type requireType(String namespace, String name) {
+        var key = namespace + "." + name;
+        var type = typeIndex.get(key);
+        assertion(type != null, "Type %s.%s not found.", namespace, name);
+        assertion(type instanceof Type, "This TypeLike is not a type: %s", type);
+        return (Type) type;
+    }
+
+    public Collection<TypeLike> getTypes() {
+        return typeIndex.values();
+    }
+
+    public Stream<EntityType> getEntityTypes() {
+        return getTypes().stream().filter(TypeLike::isEntityType).map(t -> (EntityType) t);
+    }
+
+    public Stream<TraitTypeLike> getTraitTypeLikes() {
+        return getTypes().stream().filter(TypeLike::isTraitTypeLike).map(t -> (TraitTypeLike) t);
+    }
+
+    // =========
 
     public void remove(TraitModel traitModel) {
         traitIndex.remove(traitModel.fullyQualifiedName());
@@ -170,6 +218,7 @@ public class ConceptIndex {
     /**
      * Gets a list of all properties for the given entity.  This includes any inherited properties and
      * any properties from Traits.
+     *
      * @param entityModel
      */
     public Collection<PropertyModelWithOrigin> getAllEntityProperties(EntityModel entityModel) {
@@ -198,6 +247,7 @@ public class ConceptIndex {
     /**
      * Given a starting namespace and an entity name, search up the entity hierarchy for
      * entities matching the name.  Returns the common-most one.
+     *
      * @param namespace
      * @param entityName
      */

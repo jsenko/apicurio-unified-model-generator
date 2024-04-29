@@ -16,60 +16,14 @@
 
 package io.apicurio.umg;
 
-import java.util.Collection;
-
 import io.apicurio.umg.logging.Logger;
 import io.apicurio.umg.models.spec.SpecificationModel;
 import io.apicurio.umg.pipe.GeneratorState;
 import io.apicurio.umg.pipe.Pipeline;
-import io.apicurio.umg.pipe.concept.CreateEntityModelsStage;
-import io.apicurio.umg.pipe.concept.CreateImplicitUnionRulesStage;
-import io.apicurio.umg.pipe.concept.CreateNamespaceModelsStage;
-import io.apicurio.umg.pipe.concept.CreateParentTraitsStage;
-import io.apicurio.umg.pipe.concept.CreatePropertyComparatorStage;
-import io.apicurio.umg.pipe.concept.CreatePropertyModelsStage;
-import io.apicurio.umg.pipe.concept.CreateTraitModelsStage;
-import io.apicurio.umg.pipe.concept.CreateVisitorsStage;
-import io.apicurio.umg.pipe.concept.ExpandPropertyOrderStage;
-import io.apicurio.umg.pipe.concept.IndexSpecificationsStage;
-import io.apicurio.umg.pipe.concept.NormalizeEntitiesStage;
-import io.apicurio.umg.pipe.concept.NormalizePropertiesStage;
-import io.apicurio.umg.pipe.concept.NormalizeTraitsStage;
-import io.apicurio.umg.pipe.concept.NormalizeVisitorsStage;
-import io.apicurio.umg.pipe.concept.RemoveTransparentTraitsStage;
-import io.apicurio.umg.pipe.concept.ResolveVisitorEntityStage;
-import io.apicurio.umg.pipe.concept.SpecificationValidationStage;
-import io.apicurio.umg.pipe.java.ApplyUnionTypesStage;
-import io.apicurio.umg.pipe.java.ConfigureInterfaceParentStage;
-import io.apicurio.umg.pipe.java.ConfigureInterfaceTraitsStage;
-import io.apicurio.umg.pipe.java.CreateAcceptMethodStage;
-import io.apicurio.umg.pipe.java.CreateAllNodeVisitorStage;
-import io.apicurio.umg.pipe.java.CreateCombinedVisitorInterfacesStage;
-import io.apicurio.umg.pipe.java.CreateEmptyCloneMethodStage;
-import io.apicurio.umg.pipe.java.CreateEntityImplementationsStage;
-import io.apicurio.umg.pipe.java.CreateEntityInterfacesStage;
-import io.apicurio.umg.pipe.java.CreateImplFieldsStage;
-import io.apicurio.umg.pipe.java.CreateImplMethodsStage;
-import io.apicurio.umg.pipe.java.CreateInterfaceMethodsStage;
-import io.apicurio.umg.pipe.java.CreateModelTypeStage;
-import io.apicurio.umg.pipe.java.CreateReaderDispatchersStage;
-import io.apicurio.umg.pipe.java.CreateReaderFactoryStage;
-import io.apicurio.umg.pipe.java.CreateReadersStage;
-import io.apicurio.umg.pipe.java.CreateTestFixturesStage;
-import io.apicurio.umg.pipe.java.CreateTraitInterfacesStage;
-import io.apicurio.umg.pipe.java.CreateTraversersStage;
-import io.apicurio.umg.pipe.java.CreateUnionTypeValuesStage;
-import io.apicurio.umg.pipe.java.CreateUnionTypesStage;
-import io.apicurio.umg.pipe.java.CreateUnionValueMethodsStage;
-import io.apicurio.umg.pipe.java.CreateVisitorAdaptersStage;
-import io.apicurio.umg.pipe.java.CreateVisitorInterfacesStage;
-import io.apicurio.umg.pipe.java.CreateWriterDispatchersStage;
-import io.apicurio.umg.pipe.java.CreateWriterFactoryStage;
-import io.apicurio.umg.pipe.java.CreateWritersStage;
-import io.apicurio.umg.pipe.java.JavaWriteStage;
-import io.apicurio.umg.pipe.java.LoadBaseClassesStage;
-import io.apicurio.umg.pipe.java.OrganizeImportsStage;
-import io.apicurio.umg.pipe.java.RemoveUnusedImportsStage;
+import io.apicurio.umg.pipe.concept.*;
+import io.apicurio.umg.pipe.java.*;
+
+import java.util.Collection;
 
 /**
  * @author eric.wittmann@gmail.com
@@ -110,7 +64,7 @@ public class UnifiedModelGenerator {
         pipe.addStage(new CreateNamespaceModelsStage());
         pipe.addStage(new CreateTraitModelsStage());
         pipe.addStage(new CreateEntityModelsStage());
-        pipe.addStage(new CreatePropertyModelsStage());
+        pipe.addStage(new CreatePropertyAndTypeModelsStage());
         pipe.addStage(new CreateParentTraitsStage());
         pipe.addStage(new CreateVisitorsStage());
 
@@ -126,25 +80,45 @@ public class UnifiedModelGenerator {
         pipe.addStage(new ResolveVisitorEntityStage());
         pipe.addStage(new CreatePropertyComparatorStage());
 
+        pipe.addStage(new CreateTypeBasedImplicitUnionRulesStage());
+
         // Debug the models
         //pipe.addStage(new DebugStage());
 
         // Generate java code
+        /*
+         * Wrap (concept) types in their Java equivalents.
+         */
+        pipe.addStage(new CreateJavaTypesStage());
+
         pipe.addStage(new LoadBaseClassesStage());
         pipe.addStage(new CreateModelTypeStage());
 
         pipe.addStage(new CreateTraitInterfacesStage());
-        pipe.addStage(new CreateEntityInterfacesStage());
+        pipe.addStage(new CreateTraitOrEntityInterfacesStage());
         pipe.addStage(new ConfigureInterfaceParentStage());
         pipe.addStage(new ConfigureInterfaceTraitsStage());
-        pipe.addStage(new CreateUnionTypeValuesStage());
-        pipe.addStage(new CreateUnionTypesStage());
-        pipe.addStage(new ApplyUnionTypesStage());
-        pipe.addStage(new CreateInterfaceMethodsStage());
-        pipe.addStage(new CreateEntityImplementationsStage());
-        pipe.addStage(new CreateImplFieldsStage());
-        pipe.addStage(new CreateImplMethodsStage());
-        pipe.addStage(new CreateUnionValueMethodsStage());
+
+        pipe.addStage(new CreateUnionInterfacesStage());
+        pipe.addStage(new CreatePrimitiveUnionValuesStage());
+        pipe.addStage(new CreateCollectionUnionValuesStage());
+        pipe.addStage(new CreateUnionInterfaceMethodsStage());
+        pipe.addStage(new ApplyUnionInterfacesToTypesStage());
+
+        pipe.addStage(new CreateEntityClassesStage());
+
+
+
+        pipe.addStage(new CreateMethodsStage());
+        pipe.addStage(new CreateFieldsStage());
+
+        // TODO We need entity classes, move that around?
+        pipe.addStage(new CreateUnionClassMethodsStage());
+
+        pipe.addStage(new ApplyNodeOrMappedNodeStage());
+        pipe.addStage(new ApplyRootNodeStage());
+
+        // Generate Java IO code
 
         pipe.addStage(new CreateReadersStage());
         pipe.addStage(new CreateWritersStage());

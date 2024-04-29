@@ -1,8 +1,0 @@
-name: Test Schema
-url: none
-description: none
-prefix: Test
-namespace: io.apicurio.datamodels.models.test
-versions:
-  - $ref: ./test-unions/test1.yaml
-  - $ref: ./test-unions/test2.yaml

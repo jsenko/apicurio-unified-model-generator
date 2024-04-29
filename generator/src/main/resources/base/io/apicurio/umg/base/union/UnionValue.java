@@ -1,13 +1,9 @@
-package io.apicurio.umg.base.union;
+package io.apicurio.datamodels.models.union;
 
-public interface UnionValue<T> {
+public interface UnionValue<T> extends Union {
 
-    T getValue();
+	void setUnionValue(T value);
 
-    void setValue(T value);
-
-    boolean isList();
-
-    boolean isMap();
-
+	@Override
+	T getUnionValue();
 }

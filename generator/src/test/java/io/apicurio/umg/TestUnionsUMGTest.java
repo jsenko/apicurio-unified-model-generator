@@ -12,12 +12,12 @@ public class TestUnionsUMGTest extends AbstractUMGTest {
 
         ClassLoader classLoader = getClass().getClassLoader();
         var specifications = List.of(
-                new File(classLoader.getResource("specs/test-unions.yaml").getFile())
+                new File(classLoader.getResource("specs/json-schema.yaml").getFile())
         );
 
         var rootNamespace = "io.apicurio.datamodels.models";
 
-        var outputDir = new File("/home/jsenko/projects/work/repos/github.com/Apicurio/apicurio-unified-model-generator.git/generator/src/gen/test-unions");
+        var outputDir = new File("/home/jsenko/projects/work/repos/github.com/Apicurio/apicurio-unified-model-generator.git/generator/src/gen/test");
 
         run(specifications, rootNamespace, outputDir);
     }

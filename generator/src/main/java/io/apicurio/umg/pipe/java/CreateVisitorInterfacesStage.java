@@ -78,8 +78,7 @@ public class CreateVisitorInterfacesStage extends AbstractVisitorStage {
 
         MethodSource<JavaInterfaceSource> methodSource = visitorInterfaceSource.addMethod()
                 .setName(visitMethodName)
-                .setReturnTypeVoid()
-                .setPublic();
+                .setReturnTypeVoid();
         methodSource.addParameter(javaEntityModel.getName(), "node");
     }
 

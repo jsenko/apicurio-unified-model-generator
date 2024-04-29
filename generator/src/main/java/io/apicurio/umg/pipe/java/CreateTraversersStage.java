@@ -1,28 +1,28 @@
 package io.apicurio.umg.pipe.java;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
-
+import io.apicurio.umg.beans.SpecificationVersion;
+import io.apicurio.umg.models.concept.ConceptUtils;
+import io.apicurio.umg.models.concept.VisitorModel;
+import io.apicurio.umg.models.concept.type.EntityType;
+import io.apicurio.umg.models.java.type.EntityJavaType;
+import io.apicurio.umg.pipe.java.method.BodyBuilder;
+import io.apicurio.umg.pipe.java.method.GetterMethod;
+import io.apicurio.umg.pipe.java.method.JavaUtils;
 import org.jboss.forge.roaster.Roaster;
 import org.jboss.forge.roaster.model.source.JavaClassSource;
 import org.jboss.forge.roaster.model.source.JavaInterfaceSource;
 import org.jboss.forge.roaster.model.source.MethodSource;
 import org.jboss.forge.roaster.model.source.ParameterSource;
 
-import io.apicurio.umg.beans.SpecificationVersion;
-import io.apicurio.umg.models.concept.EntityModel;
-import io.apicurio.umg.models.concept.PropertyModel;
-import io.apicurio.umg.models.concept.VisitorModel;
-import io.apicurio.umg.pipe.java.method.BodyBuilder;
+import java.util.*;
+
+import static io.apicurio.umg.logging.Errors.assertion;
+import static io.apicurio.umg.logging.Errors.fail;
 
 /**
  * Creates a traverser for each specification visitor interface.  A traverser is a visitor that
  * knows how to traverse the data model.
+ *
  * @author eric.wittmann@gmail.com
  */
 public class CreateTraversersStage extends AbstractVisitorStage {
@@ -101,9 +101,16 @@ public class CreateTraversersStage extends AbstractVisitorStage {
 
             String entityNamespace = specVer.getNamespace();
             String entityName = method.getName().replace("visit", "");
-            EntityModel entityModel = getState().getConceptIndex().lookupEntity(entityNamespace, entityName);
 
-            String body = createTraversalMethodBody(entityModel, traverserSource);
+            //EntityModel entityModel = getState().getConceptIndex().lookupEntity(entityNamespace, entityName);
+            var entityType = getState().getConceptIndex().getTypes().stream()
+                    .filter(t -> t.isEntityType() && t.getNamespace().equals(entityNamespace) && t.getName().equals(entityName))
+                    .findAny()
+                    .orElse(null);
+
+            assertion(entityType != null);
+
+            String body = createTraversalMethodBody((EntityType) entityType);
             methodSource.setBody(body);
         });
 
@@ -111,44 +118,55 @@ public class CreateTraversersStage extends AbstractVisitorStage {
         getState().getJavaIndex().index(traverserSource);
     }
 
-    private String createTraversalMethodBody(EntityModel entityModel, JavaClassSource traverserSource) {
-        JavaInterfaceSource javaEntity = lookupJavaEntity(entityModel);
+    private String createTraversalMethodBody(EntityType type) {
+
+        EntityJavaType jt = (EntityJavaType) getState().getJavaIndex().requireType(type);
+
+        JavaInterfaceSource javaEntity = jt.getInterfaceSource();
 
         BodyBuilder body = new BodyBuilder();
-        body.append("node.accept(this.visitor);");
 
-        Collection<PropertyModel> allProperties = getState().getConceptIndex().getAllEntityProperties(entityModel).stream().map(property -> property.getProperty()).filter(property -> {
-            return isEntity(property) || isEntityList(property) || isEntityMap(property) || isUnion(property);
-        }).collect(Collectors.toList());
+        body.a("node.accept(this.visitor);");
 
-        if (!allProperties.isEmpty()) {
-            body.addContext("entityType", javaEntity.getName());
-            traverserSource.addImport(javaEntity);
-            body.append("${entityType} model = (${entityType}) node;");
-        }
+        var allProperties = JavaUtils.extractProperties(jt, true);
 
-        allProperties.forEach(_property -> {
-            PropertyModel property = _property;
+        allProperties.forEach(p -> {
+            var pt = p.getType();
+            var jpt = getState().getJavaIndex().requireType(pt);
 
-            body.addContext("propertyName", property.getName());
-            body.addContext("propertyGetter", getterMethodName(property));
+            body.c("propertyName", p.getName());
+            body.c("propertyGetter", GetterMethod.methodName(p, jpt));
 
-            if (isEntity(property)) {
-                if (isStarProperty(_property)) {
-                    body.append("this.traverseMappedNode(model);");
-                } else if (isRegexProperty(_property)) {
-                    body.append("this.traverseMap(null, model.${propertyGetter}());");
+            var containsEntity = ConceptUtils.collectNestedTypes(pt).stream().anyMatch(t -> t.isEntityType());
+
+            if (containsEntity) {
+                if (pt.isEntityType()) {
+
+                    if (p.isStar()) {
+                        body.append("traverseMappedNode(node);");
+                    } else if (p.isRegex()) {
+                        body.append("traverseAnyMap(\"${propertyName}\", node.${propertyGetter}());");
+                    } else {
+                        body.append("traverseNode(\"${propertyName}\", node.${propertyGetter}());");
+                    }
+
+                } else if (pt.isListType()) {
+
+                    body.append("traverseAnyList(\"${propertyName}\", node.${propertyGetter}());");
+
+                } else if (pt.isMapType()) {
+
+                    body.append("traverseAnyMap(\"${propertyName}\", node.${propertyGetter}());");
+
+                } else if (pt.isUnionType()) {
+
+                    body.append("traverseUnion(\"${propertyName}\", node.${propertyGetter}());");
+
+                } else if (pt.isPrimitiveType()) {
+                    // ignored
                 } else {
-                    body.append("this.traverseNode(\"${propertyName}\", model.${propertyGetter}());");
+                    fail("Unhandled property in traverser");
                 }
-            } else if (isEntityList(property)) {
-                body.append("this.traverseList(\"${propertyName}\", model.${propertyGetter}());");
-            } else if (isEntityMap(property)) {
-                body.append("this.traverseMap(\"${propertyName}\", model.${propertyGetter}());");
-            } else if (isUnion(property)) {
-                body.append("this.traverseUnion(\"${propertyName}\", model.${propertyGetter}());");
-            } else {
-                warn("Unhandled property in traverser: " + property);
             }
         });
 

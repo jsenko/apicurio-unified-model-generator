@@ -1,10 +1,10 @@
 package io.apicurio.umg.models.concept;
 
-import java.util.List;
-
-import io.apicurio.umg.beans.UnionRule;
+import io.apicurio.umg.models.concept.type.Type;
 import lombok.Builder;
 import lombok.Data;
+
+import static io.apicurio.umg.logging.Errors.assertion;
 
 /**
  * Models a single property in an entity or trait.
@@ -19,16 +19,41 @@ public class PropertyModel {
 
     private String discriminator;
 
-    private String rawType;
+    private Type type;
 
-    private List<UnionRule> unionRules;
+    /**
+     * Is true if this property has been lifted during normalization.
+     * In some cases when processing leaf entities, we want to have all properties available.
+     * If this is not desirable, you can filter them out using this field.
+     */
+    private boolean shadowed;
 
-    private PropertyType type;
+    public PropertyModel copy() {
+        return PropertyModel.builder()
+                .name(name)
+                .collection(collection)
+                .discriminator(discriminator)
+                .type(type)
+                .shadowed(shadowed)
+                .build();
+    }
 
-    public UnionRule getRuleFor(String rawUnionSubtype) {
-        if (unionRules != null) {
-            return unionRules.stream().filter(rule -> rule.getUnionType().equals(rawUnionSubtype)).findFirst().orElse(null);
+    public boolean isRegex() {
+        return name.startsWith("/");
+    }
+
+    public boolean isStar() {
+        return "*".equals(name);
+    }
+
+    public String getEffectiveName() {
+        if (isStar()) {
+            return "_items";
+        } else if (isRegex()) {
+            assertion(collection != null); // TODO
+            return collection;
+        } else {
+            return name;
         }
-        return null;
     }
 }

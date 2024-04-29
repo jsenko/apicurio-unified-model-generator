@@ -1,0 +1,85 @@
+name: Test Schema 2
+version: 2
+versions:
+  - version: 2.0
+    url: none
+prefix: Test2
+namespace: io.apicurio.datamodels.models.test2.v2
+
+root:
+  type: Schema
+
+typeAliases:
+
+  - name: Schema
+    type: ArraySchema|ObjectSchema
+    unionRules:
+      - unionType: ArraySchema
+        ruleType: IsJsonObjectWithPropertyValue
+        propertyName: type
+        propertyJsonType: string
+        propertyJsonValue: array
+      - unionType: ObjectSchema
+        ruleType: IsJsonObjectWithPropertyValue
+        propertyName: type
+        propertyJsonType: string
+        propertyJsonValue: object
+
+traits:
+
+  - name: Referenceable
+    properties:
+      - name: '$ref'
+        type: string
+
+  - name: Extensible
+    properties:
+      - name: '/^x-.+$/'
+        type: any
+        collection: extensions
+
+entities:
+
+  - name: ArraySchema
+    traits:
+      - Referenceable
+      - Extensible
+    properties:
+      - name: type
+        type: string
+      - name: schemaStar
+        type: SchemaStar
+    propertyOrder:
+      - $this
+      - $Referenceable
+      - $Extensible
+
+  - name: ObjectSchema
+    traits:
+      - Referenceable
+      - Extensible
+    properties:
+      - name: type
+        type: string
+      - name: fooSchema
+        type: Schema
+      - name: fooSchemaList
+        type: '[Schema]'
+      - name: fooSchemaMap
+        type: '{Schema}'
+    propertyOrder:
+      - $this
+      - $Referenceable
+      - $Extensible
+
+  - name: SchemaStar
+    traits:
+      - Referenceable
+      - Extensible
+    properties:
+      - name: '*'
+        type: Schema
+    propertyOrder:
+      - $this
+      - $Referenceable
+      - $Extensible

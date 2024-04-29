@@ -15,6 +15,6 @@ import lombok.experimental.SuperBuilder;
 public class EntityModel extends EntityOrTraitModel {
     private final SpecificationModel specModel;
     private final Collection<TraitModel> traits = new LinkedHashSet<>();
-    private final boolean root;
+    //private final boolean root;
     private final List<String> propertyOrder;
 }

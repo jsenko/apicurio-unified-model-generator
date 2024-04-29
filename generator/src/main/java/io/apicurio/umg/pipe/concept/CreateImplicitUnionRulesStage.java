@@ -1,18 +1,16 @@
 package io.apicurio.umg.pipe.concept;
 
+import io.apicurio.umg.beans.UnionRule;
+import io.apicurio.umg.beans.UnionRuleType;
+import io.apicurio.umg.models.concept.*;
+import io.apicurio.umg.models.concept.type.RawType;
+import io.apicurio.umg.models.concept.type.UnionType;
+import io.apicurio.umg.pipe.AbstractStage;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
-
-import io.apicurio.umg.beans.UnionRule;
-import io.apicurio.umg.beans.UnionRuleType;
-import io.apicurio.umg.models.concept.EntityModel;
-import io.apicurio.umg.models.concept.NamespaceModel;
-import io.apicurio.umg.models.concept.PropertyModel;
-import io.apicurio.umg.models.concept.PropertyModelWithOrigin;
-import io.apicurio.umg.models.concept.PropertyType;
-import io.apicurio.umg.pipe.AbstractStage;
 
 /**
  * Stage responsible for creating implicit union rules.  A union rule is needed
@@ -36,9 +34,9 @@ public class CreateImplicitUnionRulesStage extends AbstractStage {
         getState().getConceptIndex().findEntities("").forEach(entity -> {
             entity.getProperties().values().stream()
             // Only care about properties with union types.
-            .filter(property -> property.getType().isUnion())
+            .filter(property -> property.getType().isUnionType())
             // Only if the property doesn't already have union rules defined.
-            .filter(property -> property.getUnionRules() == null || property.getUnionRules().isEmpty())
+            .filter(property -> ((UnionType)property.getType()).getUnionRules() == null || ((UnionType)property.getType()).getUnionRules().isEmpty())
             // Only if the union type has ambiguity
             .filter(property -> isUnionAmbiguous(property))
             .forEach(property -> {
@@ -51,7 +49,7 @@ public class CreateImplicitUnionRulesStage extends AbstractStage {
         int entityCount = 0;
         int arrayCount = 0;
         int mapCount = 0;
-        for (PropertyType nestedType : property.getType().getNested()) {
+        for (RawType nestedType : property.getType().getRawType().getNested()) {
             if (nestedType.isMap()) {
                 mapCount++;
             } else if (nestedType.isList()) {
@@ -76,15 +74,15 @@ public class CreateImplicitUnionRulesStage extends AbstractStage {
      * @param property
      */
     private void createImplicitUnionRules(EntityModel entity, PropertyModel property) {
-        final int minimumRulesRequired = property.getType().getNested().size() - 1;
+        final int minimumRulesRequired = property.getType().getRawType().getNested().size() - 1;
         int rulesCreated = 0;
-        for (PropertyType nestedType : property.getType().getNested()) {
+        for (RawType nestedType : property.getType().getRawType().getNested()) {
             UnionRule rule = createImplicitRuleForEntity(entity.getNamespace(), nestedType.getSimpleType());
             if (rule != null) {
-                List<UnionRule> unionRules = property.getUnionRules();
+                List<UnionRule> unionRules = ((UnionType)property.getType()).getUnionRules();
                 if (unionRules == null) {
                     unionRules = new ArrayList<>();
-                    property.setUnionRules(unionRules);
+                    ((UnionType)property.getType()).setUnionRules(unionRules);
                 }
                 unionRules.add(rule);
                 rulesCreated++;
@@ -104,9 +102,6 @@ public class CreateImplicitUnionRulesStage extends AbstractStage {
      *    property (and optional property value) to use for discrimination.
      * 2) The entity definition has only one property.  The existence of that property is used for
      *    discrimination.
-     *
-     * @param nsContext
-     * @param simpleType
      */
     private UnionRule createImplicitRuleForEntity(NamespaceModel nsContext, String entityName) {
         EntityModel entity = getState().getConceptIndex().lookupEntity(nsContext, entityName);
@@ -122,12 +117,12 @@ public class CreateImplicitUnionRulesStage extends AbstractStage {
             String discriminatorPropertyName = discriminatorProperty.getName();
             String discriminatorPropertyValue = discriminatorProperty.getDiscriminator();
             rule.setUnionType(entityName);
-            rule.setPropertyName(discriminatorPropertyName);
+            rule.setName(discriminatorPropertyName);
             if ("*".equals(discriminatorPropertyValue)) {
-                rule.setRuleType(UnionRuleType.propertyExists);
+                rule.setRuleType(UnionRuleType.IsJsonObjectWithPropertyName);
             } else {
-                rule.setRuleType(UnionRuleType.propertyValue);
-                rule.setPropertyValue(discriminatorPropertyValue);
+                rule.setRuleType(UnionRuleType.IsJsonObjectWithPropertyValue);
+                rule.setJsonValue(discriminatorPropertyValue);
             }
             return rule;
         } else if (discriminators.size() > 1) {
@@ -139,8 +134,8 @@ public class CreateImplicitUnionRulesStage extends AbstractStage {
             PropertyModel singleProperty = entityProperties.iterator().next().getProperty();
             UnionRule rule = new UnionRule();
             rule.setUnionType(entityName);
-            rule.setPropertyName(singleProperty.getName());
-            rule.setRuleType(UnionRuleType.propertyExists);
+            rule.setName(singleProperty.getName());
+            rule.setRuleType(UnionRuleType.IsJsonObjectWithPropertyName);
             return rule;
         }
 

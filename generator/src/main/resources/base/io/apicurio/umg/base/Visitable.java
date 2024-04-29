@@ -1,9 +1,8 @@
-package io.apicurio.umg.base;
+package io.apicurio.datamodels.models;
 
-import io.apicurio.umg.base.visitors.Visitor;
+import io.apicurio.datamodels.models.visitors.Visitor;
 
 public interface Visitable {
 
-    public void accept(Visitor visitor);
-
+	void accept(Visitor visitor);
 }

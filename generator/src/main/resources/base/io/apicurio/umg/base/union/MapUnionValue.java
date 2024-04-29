@@ -1,4 +1,4 @@
-package io.apicurio.umg.base.union;
+package io.apicurio.datamodels.models.union;
 
 import java.util.Map;
 

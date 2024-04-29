@@ -28,8 +28,8 @@ public class CreateParentTraitsStage extends AbstractStage {
 
         getState().getConceptIndex().findEntities("").stream().filter(entity -> entity.isLeaf()).forEach(entity -> {
             entity.getProperties().values().stream().filter(property -> needsParent(entity, property)).forEach(property -> {
-                if (!property.getType().isList() && !property.getType().isMap()) {
-                    String propertyTypeName = property.getType().getSimpleType();
+                if (!property.getType().isListType() && !property.getType().isMapType()) {
+                    String propertyTypeName = property.getType().getName();
                     String traitName = propertyTypeName + "Parent";
                     TraitModel parentTrait;
                     if (entity.getNamespace().containsTrait(traitName)) {
@@ -39,8 +39,8 @@ public class CreateParentTraitsStage extends AbstractStage {
                         PropertyModel traitProperty = PropertyModel.builder()
                                 .name(property.getName())
                                 .collection(property.getCollection())
-                                .rawType(property.getRawType())
-                                .type(property.getType()).build();
+                                .type(property.getType())
+                                .build();
                         parentTrait.getProperties().put(property.getName(), traitProperty);
                         entity.getNamespace().getTraits().put(traitName, parentTrait);
                         getState().getConceptIndex().index(parentTrait);
@@ -81,7 +81,7 @@ public class CreateParentTraitsStage extends AbstractStage {
             return false;
         }
         String propertyName = property.getName();
-        String propertyTypeName = property.getType().getSimpleType();
+        String propertyTypeName = property.getType().getName();
         if (!propertyName.equals(StringUtils.capitalize(propertyTypeName))) {
             return false;
         }

@@ -1,36 +1,29 @@
-package io.apicurio.umg.base;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+package io.apicurio.datamodels.models;
 
 import com.fasterxml.jackson.databind.JsonNode;
+
+import java.util.*;
 
 public abstract class NodeImpl implements Node {
 
     private static int __modelIdCounter = 0;
 
-    protected int _modelId = __modelIdCounter++;
+    private final int _modelId = __modelIdCounter++;
     private Node _parent;
     private Map<String, JsonNode> _extraProperties;
     private Map<String, Object> _attributes;
 
     @Override
-    public RootNode root() {
-        return this._parent.root();
+    public RootCapable root() {
+        if (!this.isAttached()) {
+            throw new IllegalStateException("Node is not attached.");
+        }
+        return this.parent().root();
     }
 
     @Override
     public Node parent() {
         return this._parent;
-    }
-    
-    public void setParent(Node parent) {
-        this._parent = parent;
     }
 
     @Override
@@ -52,15 +45,19 @@ public abstract class NodeImpl implements Node {
         if (this._attributes == null) {
             this._attributes = new HashMap<>();
         }
-        this._attributes.put(attributeName, attributeValue);
+        if (attributeValue != null) {
+            this._attributes.put(attributeName, attributeValue);
+        } else {
+            this._attributes.remove(attributeName);
+        }
     }
 
     @Override
-    public Collection<String> getNodeAttributeNames() {
+    public Set<String> getNodeAttributeNames() {
         if (this._attributes != null) {
-            return this._attributes.keySet();
+            return Collections.unmodifiableSet(this._attributes.keySet());
         } else {
-            return Collections.emptyList();
+            return Collections.emptySet();
         }
     }
 
@@ -81,7 +78,7 @@ public abstract class NodeImpl implements Node {
 
     @Override
     public JsonNode removeExtraProperty(String name) {
-        if (this._extraProperties != null && this._extraProperties.containsKey(name)) {
+        if (this._extraProperties != null) {
             return this._extraProperties.remove(name);
         }
         return null;
@@ -95,7 +92,7 @@ public abstract class NodeImpl implements Node {
     @Override
     public List<String> getExtraPropertyNames() {
         if (this.hasExtraProperties()) {
-            return new ArrayList<String>(this._extraProperties.keySet());
+            return List.copyOf(this._extraProperties.keySet());
         }
         return Collections.emptyList();
     }
@@ -110,36 +107,29 @@ public abstract class NodeImpl implements Node {
 
     @Override
     public boolean isAttached() {
-        if (_parent == null) {
-            return false;
+        return this.parent() != null;
+    }
+
+    @Override
+    public void attachTo(Node parent) {
+        if (!parent.isAttached()) {
+            throw new IllegalArgumentException("Target parent node is not itself attached.");
         }
+        this._parent = parent;
+    }
+
+    @Override
+    public boolean isNode() {
         return true;
     }
 
     @Override
-    public void attach(Node parent) {
-        if (!parent.isAttached())
-            throw new IllegalArgumentException(
-                    "Target parent node (method argument) is not itself attached.");
-        this.setParent(parent);
-    }
-
-    /*
-     * Some methods that must be implemented on an entity only when the entity is part 
-     * of a union type.  We put them here so we don't have to generate them.  But perhaps
-     * we *should* generate them only on the appropriate entity implementation classes.
-     */
-    
-    public boolean isEntity() {
-        return true;
-    }
-
-    public boolean isEntityList() {
+    public boolean isListUnionValueWithAny() {
         return false;
     }
 
-    public boolean isEntityMap() {
+    @Override
+    public boolean isMapUnionValueWithAny() {
         return false;
     }
-
 }

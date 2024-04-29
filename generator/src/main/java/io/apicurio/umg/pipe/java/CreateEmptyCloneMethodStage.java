@@ -1,11 +1,8 @@
 package io.apicurio.umg.pipe.java;
 
-import org.jboss.forge.roaster.model.source.JavaClassSource;
-import org.jboss.forge.roaster.model.source.JavaInterfaceSource;
-import org.jboss.forge.roaster.model.source.MethodSource;
-
-import io.apicurio.umg.models.concept.EntityModel;
+import io.apicurio.umg.models.java.type.EntityJavaType;
 import io.apicurio.umg.pipe.java.method.BodyBuilder;
+import org.jboss.forge.roaster.model.source.JavaInterfaceSource;
 
 /**
  * Creates the "emptyClone" method for all entity implementations.  This is required by the
@@ -17,36 +14,31 @@ public class CreateEmptyCloneMethodStage extends AbstractJavaStage {
 
     @Override
     protected void doProcess() {
-        getState().getConceptIndex().findEntities("").stream().filter(entity -> entity.isLeaf()).forEach(entity -> {
-            createEmptyCloneMethod(entity);
-        });
-    }
-
-    private void createEmptyCloneMethod(EntityModel entity) {
-        JavaClassSource javaEntity = lookupJavaEntityImpl(entity);
-        createEmptyCloneMethod(entity, javaEntity);
+        getState().getJavaIndex().getTypeIndex().values().stream()
+                .filter(t -> t.getTypeModel().isEntityType())
+                .map(t -> (EntityJavaType) t)
+                .filter(t -> t.getTypeModel().getEntity().isLeaf())
+                .forEach(this::createEmptyCloneMethod);
     }
 
     /**
      * Creates the "emptyClone" method, needed by the Node interface that all nodes must
      * implement.
-     * @param entity
-     * @param javaEntity
      */
-    private void createEmptyCloneMethod(EntityModel entity, JavaClassSource javaEntity) {
+    private void createEmptyCloneMethod(EntityJavaType javaEntity) {
         String nodeFQN = getNodeEntityInterfaceFQN();
         JavaInterfaceSource nodeInterfaceSource = getState().getJavaIndex().lookupInterface(nodeFQN);
 
-        String methodName = "emptyClone";
-
-        MethodSource<JavaClassSource> method = javaEntity.addMethod().setPublic().setName(methodName).setReturnType(nodeInterfaceSource);
-        method.addAnnotation(Override.class);
-        javaEntity.addImport(nodeInterfaceSource);
-
         BodyBuilder body = new BodyBuilder();
-        body.addContext("implClassName", javaEntity.getName());
+        body.addContext("implClassName", javaEntity.getName(true, true));
         body.append("return new ${implClassName}();");
-        method.setBody(body.toString());
-    }
 
+        javaEntity.getClassSource().addMethod()
+                .setName("emptyClone")
+                .setReturnType(javaEntity.getInterfaceSource())
+                .setBody(body.toString())
+                .setPublic()
+                .addAnnotation(Override.class);
+        javaEntity.getClassSource().addImport(nodeInterfaceSource);
+    }
 }

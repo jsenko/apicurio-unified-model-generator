@@ -41,4 +41,7 @@ public abstract class EntityOrTraitModel {
         this.properties.remove(propertyName);
     }
 
+    public boolean hasParent() {
+        return parent != null;
+    }
 }

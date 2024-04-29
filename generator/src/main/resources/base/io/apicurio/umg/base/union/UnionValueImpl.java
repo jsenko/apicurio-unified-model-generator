@@ -1,64 +1,45 @@
-package io.apicurio.umg.base.union;
+package io.apicurio.datamodels.models.union;
 
-import io.apicurio.umg.base.visitors.Visitor;
+import io.apicurio.datamodels.models.visitors.Visitor;
 
-/**
- * Base class for all union value implementations.
- * @author eric.wittmann@gmail.com
- */
-public abstract class UnionValueImpl<T> implements UnionValue<T>, Union {
+public abstract class UnionValueImpl<T> implements UnionValue<T> {
 
-    private T value;
+	private T value;
 
-    public UnionValueImpl() {
-    }
+	public UnionValueImpl() {
+	}
 
-    public UnionValueImpl(T value) {
-        this.value = value;
-    }
+	public UnionValueImpl(T value) {
+		this.value = value;
+	}
 
-    @Override
-    public Object unionValue() {
-        return value;
-    }
+	@Override
+	public T getUnionValue() {
+		return value;
+	}
 
-    @Override
-    public T getValue() {
-        return value;
-    }
+	@Override
+	public void setUnionValue(T value) {
+		this.value = value;
+	}
 
-    @Override
-    public void setValue(T value) {
-        this.value = value;
-    }
+	@Override
+	public boolean isNode() {
+		return false;
+	}
 
-    @Override
-    public boolean isList() {
-        return false;
-    }
+	@Override
+	public boolean isListUnionValueWithAny() {
+		return false;
+	}
 
-    @Override
-    public boolean isMap() {
-        return false;
-    }
+	@Override
+	public boolean isMapUnionValueWithAny() {
+		return false;
+	}
 
-    @Override
-    public boolean isEntity() {
-        return false;
-    }
-
-    @Override
-    public boolean isEntityList() {
-        return false;
-    }
-
-    @Override
-    public boolean isEntityMap() {
-        return false;
-    }
-
-    @Override
-    public void accept(Visitor visitor) {
-    }
+	@Override
+	public void accept(Visitor visitor) {
+	}
 
 }

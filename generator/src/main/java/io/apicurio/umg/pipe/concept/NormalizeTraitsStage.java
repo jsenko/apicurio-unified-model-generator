@@ -5,10 +5,15 @@ import java.util.HashSet;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.stream.Collectors;
 
 import io.apicurio.umg.models.concept.NamespaceModel;
 import io.apicurio.umg.models.concept.TraitModel;
+import io.apicurio.umg.models.concept.type.EntityType;
+import io.apicurio.umg.models.concept.typelike.TraitTypeLike;
 import io.apicurio.umg.pipe.AbstractStage;
+
+import static io.apicurio.umg.logging.Errors.assertion;
 
 public class NormalizeTraitsStage extends AbstractStage {
 
@@ -44,6 +49,17 @@ public class NormalizeTraitsStage extends AbstractStage {
                     // Make the new parent trait the actual parent of each child trait
                     childTraits.forEach(childTrait -> {
                         childTrait.setParent(ancestorTrait);
+
+                        // Add the new trait to type index
+                        // We need to set the parent, so look for type representing the current entity
+                        var traitType = getState().getConceptIndex().getTraitTypeLikes()
+                                .filter(e -> e.getTrait().equals(childTrait))
+                                .collect(Collectors.toList());
+                        assertion(traitType.size() == 1);
+                        var ancestorType = getState().getConceptIndex().lookupOrIndex(TraitTypeLike.fromTrait(ancestorTrait));
+                        traitType.get(0).setParent(ancestorType);
+                        ancestorType.setLeaf(false);
+
                         // Skip processing this model if its turn comes up in the queue.
                         modelsProcessed.add(childTrait.fullyQualifiedName());
                     });

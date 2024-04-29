@@ -43,16 +43,17 @@ public class SpecificationValidationStage extends AbstractStage {
             entities.forEach(entity -> {
                 validateEntityProperties(specVer, entity);
             });
-            long numRootEntities = entities.stream().filter(entity -> entity.getRoot() != null && entity.getRoot()).count();
-            if (numRootEntities != 1) {
-                fail("Specification version '%s' must have one and only one root entity.", specVer.getName());
-            }
+//            long numRootEntities = entities.stream().filter(entity -> entity.getRoot() != null && entity.getRoot()).count();
+//            if (numRootEntities != 1) {
+//                fail("Specification version '%s' must have one and only one root entity.", specVer.getName());
+//            }
         });
     }
 
     private void validateEntityProperties(SpecificationVersion specVer, Entity entity) {
         if (entity.getProperties() == null || entity.getProperties().isEmpty()) {
-            fail("Entity '%s' in specification '%s' must have at least one property.", entity.getName(), specVer.getName());
+            //fail("Entity '%s' in specification '%s' must have at least one property.", entity.getName(), specVer.getName());
+            // TODO: Why? ^
         }
         if (entity.getPropertyOrder() == null || entity.getPropertyOrder().size() == 0) {
             fail("Entity '%s' in specification '%s' is missing its property ordering.", entity.getName(), specVer.getName());

@@ -1,31 +1,32 @@
 package io.apicurio.umg.pipe.java;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-
-import org.jboss.forge.roaster.Roaster;
-import org.jboss.forge.roaster.model.source.JavaClassSource;
-import org.jboss.forge.roaster.model.source.JavaInterfaceSource;
-import org.jboss.forge.roaster.model.source.MethodSource;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-
 import io.apicurio.umg.beans.SpecificationVersion;
-import io.apicurio.umg.beans.UnionRule;
-import io.apicurio.umg.beans.UnionRuleType;
-import io.apicurio.umg.models.concept.EntityModel;
-import io.apicurio.umg.models.concept.NamespaceModel;
+import io.apicurio.umg.models.concept.ConceptUtils;
 import io.apicurio.umg.models.concept.PropertyModel;
-import io.apicurio.umg.models.concept.PropertyModelWithOrigin;
-import io.apicurio.umg.models.concept.PropertyType;
+import io.apicurio.umg.models.concept.type.*;
+import io.apicurio.umg.models.java.type.EntityJavaType;
+import io.apicurio.umg.models.java.type.UnionJavaType;
 import io.apicurio.umg.pipe.java.method.BodyBuilder;
-import lombok.AllArgsConstructor;
-import lombok.Data;
+import io.apicurio.umg.pipe.java.method.SetterMethod;
+import org.jboss.forge.roaster.Roaster;
+import org.jboss.forge.roaster.model.Visibility;
+import org.jboss.forge.roaster.model.source.JavaClassSource;
+import org.jboss.forge.roaster.model.source.JavaInterfaceSource;
+
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import static io.apicurio.umg.logging.Errors.assertion;
+import static io.apicurio.umg.logging.Errors.fail;
+import static io.apicurio.umg.pipe.java.method.BodyBuilder.escapeJavaString;
+import static java.util.Objects.requireNonNull;
+import static org.apache.commons.lang3.StringUtils.capitalize;
 
 /**
  * Creates the i/o reader classes.  There is a bespoke reader for each specification
@@ -34,6 +35,10 @@ import lombok.Data;
  * @author eric.wittmann@gmail.com
  */
 public class CreateReadersStage extends AbstractJavaStage {
+
+    private Type root;
+
+    private Set<Type> rootReachable;
 
     @Override
     protected void doProcess() {
@@ -44,6 +49,7 @@ public class CreateReadersStage extends AbstractJavaStage {
 
     /**
      * Creates a reader for the given spec version.
+     *
      * @param specVersion
      */
     private void createReader(SpecificationVersion specVersion) {
@@ -63,112 +69,593 @@ public class CreateReadersStage extends AbstractJavaStage {
         readerClassSource.addImport(modelReaderInterfaceSource);
         readerClassSource.addInterface(modelReaderInterfaceSource);
 
-        // Create the readXYZ methods - one for each entity
-        specVersion.getEntities().forEach(entity -> {
-            EntityModel entityModel = getState().getConceptIndex().lookupEntity(specVersion.getNamespace() + "." + entity.getName());
-            if (entityModel == null) {
-                warn("Entity model not found for entity: " + entity);
-            } else {
-                createReadMethodFor(specVersion, readerClassSource, entityModel);
+        // Identify the root type
+        var root = getState().getConceptIndex().getTypes().stream()
+                .filter(t -> t.isType())
+                .map(t -> (Type) t)
+                .filter(t -> t.getNamespace().equals(specVersion.getNamespace()))
+                .filter(t -> t.isRoot())
+                .collect(Collectors.toList());
+        assertion(root.size() == 1);
+        this.root = root.get(0);
 
-                // There should be a single root entity in the spec.
-                if (entityModel.isRoot()) {
-                    createReadRootMethod(specVersion, readerClassSource, entityModel);
-                }
-            }
-        });
+        this.rootReachable = ConceptUtils.collectNestedTypes(this.root).stream()
+                .filter(t -> t.isType()) // TODO: Should not be necessary.
+                .map(t -> (Type) t)
+                .collect(Collectors.toSet());
+
+        readMethodForRoot(readerClassSource);
+
+        getState().getConceptIndex().getTypes().stream()
+                .filter(t -> !t.isTraitTypeLike() && !t.isPrimitiveType())
+                .map(t -> (Type) t)
+                .filter(t -> t.getNamespace().equals(specVersion.getNamespace()))
+                .forEach(t -> {
+                    readMethodForAnyType(readerClassSource, t);
+                });
 
         getState().getJavaIndex().index(readerClassSource);
     }
 
-    /**
-     * Creates a "readRoot(json)" method for this reader.
-     * @param specVersion
-     * @param readerClassSource
-     * @param entityModel
-     */
-    private void createReadRootMethod(SpecificationVersion specVersion, JavaClassSource readerClassSource, EntityModel entityModel) {
-        JavaInterfaceSource rootNodeInterfaceSource = getState().getJavaIndex().lookupInterface(getRootNodeInterfaceFQN());
-        readerClassSource.addImport(rootNodeInterfaceSource);
-        readerClassSource.addImport(ObjectNode.class);
 
-        MethodSource<JavaClassSource> readRootMethodSource = readerClassSource.addMethod()
+    private void readMethodForRoot(JavaClassSource readerClassSource) {
+
+        var jt = getState().getJavaIndex().requireType(root);
+        jt.addImportsTo(readerClassSource);
+
+        var methodSource = readerClassSource.addMethod()
                 .setName("readRoot")
-                .setReturnType(rootNodeInterfaceSource.getName())
+                .setReturnType(jt.toJavaTypeString(false))
                 .setPublic();
-        readRootMethodSource.addParameter("ObjectNode", "json");
-        readRootMethodSource.addAnnotation(Override.class);
+        methodSource.addAnnotation(Override.class);
 
-        String readMethodName = readMethodName(entityModel);
-        JavaInterfaceSource entitySource = lookupJavaEntity(entityModel);
-        JavaClassSource entityImplSource = lookupJavaEntityImpl(entityModel);
-
-        readerClassSource.addImport(entitySource);
-        readerClassSource.addImport(entityImplSource);
-
-        BodyBuilder body = new BodyBuilder();
-        body.addContext("readMethodName", readMethodName);
-        body.addContext("rootEntityType", entitySource.getName());
-        body.addContext("rootEntityImplType", entityImplSource.getName());
-
-        body.append("${rootEntityType} rootModel = new ${rootEntityImplType}();");
-        body.append("this.${readMethodName}(json, rootModel);");
-        body.append("return rootModel;");
-        readRootMethodSource.setBody(body.toString());
-    }
-
-    /**
-     * Creates a single "readXyz" method for the given entity.
-     *
-     * @param specVersion
-     * @param readerClassSource
-     * @param entityModel
-     */
-    private void createReadMethodFor(SpecificationVersion specVersion, JavaClassSource readerClassSource, EntityModel entityModel) {
-        String entityFQN = getJavaEntityInterfaceFQN(entityModel);
-        String readMethodName = readMethodName(entityModel);
-
-        JavaInterfaceSource javaEntity = getState().getJavaIndex().lookupInterface(entityFQN);
-        if (javaEntity == null) {
-            warn("Java interface for entity not found: " + entityFQN);
-        }
-
-        readerClassSource.addImport(ObjectNode.class);
-        readerClassSource.addImport(javaEntity);
-        MethodSource<JavaClassSource> methodSource = readerClassSource.addMethod()
-                .setName(readMethodName)
-                .setReturnTypeVoid()
-                .setPublic();
         methodSource.addParameter(ObjectNode.class.getSimpleName(), "json");
-        methodSource.addParameter(javaEntity.getName(), "node");
 
-        // Now create the body content for the reader.
-        BodyBuilder body = new BodyBuilder();
-        // Read each property of the entity
-        Collection<PropertyModelWithOrigin> allProperties = getState().getConceptIndex().getAllEntityProperties(entityModel);
-        allProperties.forEach(property -> {
-            createReadPropertyCode(body, property, entityModel, javaEntity, readerClassSource);
-        });
-        // Read "extra" properties (whatever is left over)
-        createReadExtraPropertiesCode(body);
+        var body = new BodyBuilder();
+
+        body.c("readMethodName", readMethodName(jt.getName(false, false)));
+
+        //body.a("if (!JsonUtil.isObject(json)) {");
+        //body.a("    return null;");
+        //body.a("}");
+        body.a("return ${readMethodName}(json, true);");
 
         methodSource.setBody(body.toString());
     }
 
-    /**
-     * Generates the right java code for reading a single property of an entity.
-     *
-     * @param body
-     * @param property
-     * @param javaEntityModel
-     * @param readerClassSource
-     */
-    private void createReadPropertyCode(BodyBuilder body, PropertyModelWithOrigin property, EntityModel entityModel,
-            JavaInterfaceSource javaEntity, JavaClassSource readerClassSource) {
-        CreateReadPropertySnippet crp = new CreateReadPropertySnippet(property, entityModel, javaEntity, readerClassSource);
-        body.clearContext();
-        crp.writeTo(body);
+
+    private void readMethodForAnyType(JavaClassSource readerClassSource, Type t) {
+
+        if (t.isEntityType()) {
+            readMethodForEntityType(readerClassSource, (EntityType) t);
+        } else if (t.isUnionType()) {
+            readMethodForUnionType(readerClassSource, (UnionType) t);
+        } else if (t.isListType()) {
+            readMethodForListType(readerClassSource, (ListType) t);
+        } else if (t.isMapType()) {
+            readMethodForMapType(readerClassSource, (MapType) t);
+        } else {
+            fail("TODO");
+        }
     }
+
+
+    private void readMethodForEntityType(JavaClassSource readerClassSource, EntityType t) {
+
+        var jt = (EntityJavaType) getState().getJavaIndex().requireType(t);
+        jt.addImportsTo(readerClassSource);
+
+        // We'll generate up to three methods for an entity:
+        // #1 Base read method: readX(ObjectNode json, Node node);
+        // #2 No node version: readX(JsonNode json);
+        // #3 No node root-aware version (if needed): readX(JsonNode json, boolean isRoot);
+        // We need to generate #1 and #2 separately for backwards compatibility, to support read dispatchers.
+
+        // Generate #2
+        // If this type is part of root, we'll generate an extra method for a non-root case
+        if (rootReachable.contains(t)) {
+            var noNodeNoRootMethodSource = readerClassSource.addMethod()
+                    .setName(readMethodName(jt.getName(false, false)))
+                    .setReturnType(jt.getInterfaceSource())
+                    .setPublic();
+
+            readerClassSource.addImport(JsonNode.class);
+            noNodeNoRootMethodSource.addParameter(JsonNode.class.getSimpleName(), "json");
+
+            var body = new BodyBuilder();
+
+            body.c("readMethodName", readMethodName(jt.getName(false, false)));
+
+            body.a("return ${readMethodName}(json, false);");
+
+            noNodeNoRootMethodSource.setBody(body.toString());
+        }
+
+        // Generate either #2 or #3
+        {
+            var noNodeMethodSource = readerClassSource.addMethod()
+                    .setName(readMethodName(jt.getName(false, false)))
+                    .setReturnType(jt.getInterfaceSource())
+                    .setVisibility(rootReachable.contains(t) ? Visibility.PRIVATE : Visibility.PUBLIC);
+
+            readerClassSource.addImport(JsonNode.class);
+            noNodeMethodSource.addParameter(JsonNode.class.getSimpleName(), "json");
+            if (rootReachable.contains(t)) {
+                noNodeMethodSource.addParameter(boolean.class, "isRoot");
+            }
+
+            var body = new BodyBuilder();
+
+            body.c("readMethodName", readMethodName(jt.getName(false, false)));
+
+            body
+                    .a("if (!JsonUtil.isObject(json)) {")
+                    .indent().a("return null;")
+                    .deindent().a("}");
+
+            body.c("nodeType", jt.getInterfaceSource().getName());
+            body.c("nodeTypeImpl", jt.getClassSource().getName());
+
+            if (rootReachable.contains(t)) {
+                body.a("${nodeType} node = isRoot ? ${nodeType}.createRoot() : new ${nodeTypeImpl}();");
+            } else {
+                body.a("${nodeType} node = new ${nodeTypeImpl}();");
+            }
+            body.a("return ${readMethodName}(JsonUtil.toObject(json), node);");
+            noNodeMethodSource.setBody(body.toString());
+        }
+        // Generate #1
+
+        var methodSource = readerClassSource.addMethod()
+                .setName(readMethodName(jt.getName(false, false)))
+                .setReturnType(jt.getInterfaceSource())
+                .setPublic();
+
+        readerClassSource.addImport(ObjectNode.class);
+        methodSource.addParameter(ObjectNode.class.getSimpleName(), "json");
+        methodSource.addParameter(jt.getInterfaceSource().getName(), "node");
+
+        var body = new BodyBuilder();
+
+        // CREATE NODE
+
+        var properties = new ArrayList<PropertyModel>();
+        properties.addAll(t.getEntity().getProperties().values());
+        properties.addAll(t.getEntity().getTraits().stream().flatMap(tt -> tt.getProperties().values().stream()).collect(Collectors.toSet()));
+
+        properties.forEach(p -> {
+
+            var jpt = getState().getJavaIndex().requireType(p.getType());
+            jpt.addImportsTo(readerClassSource);
+
+            body.c("valueType", jpt.toJavaTypeString(false));
+
+            // PREFIX CODE
+            body.a("{");
+            body.indent();
+
+            if (p.isStar()) {
+
+                body.c("addMethodName", "addItem");
+
+                body.a("List<String> propertyNames = JsonUtil.keys(json);");
+                body.a("propertyNames.forEach(name -> {");
+                body.indent();
+                body.a("JsonNode any = JsonUtil.consumeAnyProperty(json, name);");
+                body.a("if (any != null) {");
+                body.indent();
+
+            } else if (p.isRegex()) {
+
+                body.c("propertyRegex", encodeRegex(extractRegex(p.getName())));
+                body.c("addMethodName", addMethodName(singularize(p.getCollection())));
+
+                body.a("List<String> propertyNames = JsonUtil.matchingKeys(\"${propertyRegex}\", json);");
+                body.a("propertyNames.forEach(name -> {");
+                body.indent();
+                body.a("JsonNode any = JsonUtil.consumeAnyProperty(json, name);");
+                body.a("if (any != null) {");
+                body.indent();
+
+            } else {
+
+                body.c("propertyName", p.getName());
+                body.c("addMethodName", addMethodName(singularize(p.getName())));
+
+                body.a("JsonNode any = JsonUtil.consumeAnyProperty(json, \"${propertyName}\");");
+                body.a("if (any != null) {");
+                body.indent();
+            }
+
+            body.c("propertyType", jpt.toJavaTypeString(false));
+            body.c("setterMethodName", SetterMethod.methodName(p));
+
+            // READING
+            if (p.getType().isPrimitiveType()) {
+
+                body.c("toMethod", determineToVariant((PrimitiveType) p.getType(), "any"));
+
+                body.a("${valueType} value = ${toMethod};");
+                body.a("if(value != null) {");
+                body.indent();
+
+            } else {
+
+                body.c("readMethodName", readMethodName(jpt.getName(false, false)));
+
+                body.a("${valueType} value = ${readMethodName}(JsonUtil.clone(any));");
+                body.a("if(value != null) {");
+                body.indent();
+
+            }
+
+            // HANDLE COLLECTION ITERATION
+
+            if (p.getType().isListType()) {
+
+                body.c("valueVar", "v");
+
+                body.a("value.forEach(v -> {");
+                body.indent();
+
+            } else if (p.getType().isMapType()) {
+
+                body.c("valueVar", "v");
+
+                body.a("value.forEach((k,v) -> {");
+                body.indent();
+
+            } else {
+                // Do nothing
+                body.c("valueVar", "value");
+            }
+
+            // ATTACH
+            var needsAttach = ConceptUtils.collectNestedTypes(p.getType()).stream().anyMatch(tt -> tt.isEntityType());
+            if (needsAttach) {
+                readerClassSource.addImport("io.apicurio.datamodels.models.Any"); // TODO
+                body.a("Any.attach(${valueVar}, node);");
+            }
+
+            // SET/ADD CODE
+            body.c("setterMethodName", setterMethodName(p));
+
+            if (p.isStar() || p.isRegex()) {
+
+                if (p.getType().isCollectionType()) {
+                    body.deindent().a("});");
+                }
+
+                body.a("node.${addMethodName}(name, value);");
+
+            } else {
+                if (p.getType().isListType()) {
+
+                    body
+                            .a("node.${addMethodName}(v);")
+                            .deindent().a("});");
+
+                } else if (p.getType().isMapType()) {
+
+                    body
+                            .a("node.${addMethodName}(k, v);")
+                            .deindent().a("});");
+
+                } else {
+
+                    body.a("node.${setterMethodName}(value);");
+                }
+            }
+
+            // POSTFIX CODE
+            if (p.isStar() || p.isRegex()) {
+
+                body
+                        .deindent().a("} else {")
+                        .indent().a("node.addExtraProperty(name, any);")
+                        .deindent().a("}")
+                        .deindent().a("}")
+                        .deindent().a("});");
+
+            } else {
+
+
+                body
+                        .deindent().a("} else {")
+                        .indent().a("node.addExtraProperty(\"${propertyName}\", any);")
+                        .deindent().a("}")
+                        .deindent().a("}");
+            }
+
+            body.deindent().a("}");
+        });
+
+        createReadExtraPropertiesCode(body);
+
+        body.a("return node;");
+
+        methodSource.setBody(body.toString());
+    }
+
+
+    private void readMethodForUnionType(JavaClassSource readerClassSource, UnionType t) {
+
+        var jt = (UnionJavaType) getState().getJavaIndex().requireType(t);
+
+        if (rootReachable.contains(t)) {
+            var nonrootMethodSource = readerClassSource.addMethod()
+                    .setName(readMethodName(jt.getName(false, false)))
+                    .setReturnType(jt.getInterfaceSource())
+                    .setPublic();
+
+            readerClassSource.addImport(JsonNode.class);
+            nonrootMethodSource.addParameter(JsonNode.class.getSimpleName(), "json");
+
+            var body = new BodyBuilder();
+
+            body.c("readMethodName", readMethodName(jt.getName(false, false)));
+
+            body.a("return ${readMethodName}(json, false);");
+
+            nonrootMethodSource.setBody(body.toString());
+        }
+
+        var methodSource = readerClassSource.addMethod()
+                .setName(readMethodName(jt.getName(false, false)))
+                .setReturnType(jt.getInterfaceSource())
+                .setVisibility(rootReachable.contains(t) ? Visibility.PRIVATE : Visibility.PUBLIC);
+
+        readerClassSource.addImport(ObjectNode.class);
+        methodSource.addParameter(JsonNode.class.getSimpleName(), "json");
+        if (rootReachable.contains(t)) {
+            methodSource.addParameter(boolean.class, "isRoot");
+        }
+
+        var body = new BodyBuilder();
+
+        t.getTypes().forEach(nt -> {
+            var jnt = getState().getJavaIndex().requireType(nt);
+            jnt.addImportsTo(readerClassSource);
+            var rule = t.getRuleFor(nt.getName());
+            switch (rule.getRuleType()) {
+                case IsJsonTypes: {
+                    var types = rule.getJsonTypes();
+                    requireNonNull(types);
+                    var cond = new ArrayList<String>();
+                    types.forEach(tt -> {
+                        if (!List.of("object", "array", "string", "boolean", "number").contains(tt)) {
+                            throw new RuntimeException("Illegal union rule jsonType: " + tt);
+                        }
+                        cond.add("JsonUtil.is" + capitalize(tt) + "(json)");
+                    });
+                    body.a("if (" + String.join(" || ", cond) + ") {");
+                }
+                break;
+                case IsJsonValue: {
+                    var type = rule.getJsonType();
+                    requireNonNull(type);
+                    if (!List.of("object", "array", "string", "boolean", "number").contains(type)) {
+                        throw new RuntimeException("Illegal union rule jsonType: " + type);
+                    }
+                    body.c("type", capitalize(type));
+                    var value = rule.getJsonValue();
+                    requireNonNull(value);
+                    body.a("if (JsonUtil.is${type}(json) && JsonUtil.equals(json, JsonUtil.parse${type}(" + escapeJavaString(value) + "))) {");
+                }
+                break;
+                case IsJsonObjectWithPropertyName: {
+                    var propertyName = rule.getName();
+                    requireNonNull(propertyName);
+                    body.c("propertyName", propertyName);
+                    body.a("if (JsonUtil.isObjectWithProperty(json, \"${propertyName}\")) {");
+                }
+                break;
+                case IsJsonObjectWithoutPropertyName: {
+                    var propertyName = rule.getName();
+                    requireNonNull(propertyName);
+                    body.c("propertyName", propertyName);
+                    body.a("if (!JsonUtil.isObjectWithProperty(json, \"${propertyName}\")) {");
+                }
+                break;
+                case IsJsonObjectWithPropertyTypes: {
+                    var propertyName = rule.getName();
+                    requireNonNull(propertyName);
+                    body.c("propertyName", propertyName);
+                    var types = rule.getJsonTypes();
+                    requireNonNull(types);
+                    var cond = new ArrayList<String>();
+                    types.forEach(tt -> {
+                        if (!List.of("object", "array", "string", "boolean", "number").contains(tt)) {
+                            throw new RuntimeException("Illegal union rule jsonType: " + tt);
+                        }
+                        cond.add("JsonUtil.is" + capitalize(tt) + "(JsonUtil.getProperty(JsonUtil.toObject(json), \"${propertyName}\"))");
+                    });
+                    body.a("if (JsonUtil.isObjectWithProperty(json, \"${propertyName}\") && (" + String.join(" || ", cond) + ")) {");
+                }
+                break;
+                case IsJsonObjectWithPropertyValue: {
+                    var propertyName = rule.getName();
+                    requireNonNull(propertyName);
+                    body.c("propertyName", propertyName);
+                    var type = rule.getJsonType();
+                    requireNonNull(type);
+                    body.c("type", capitalize(type));
+                    var value = rule.getJsonValue();
+                    requireNonNull(value);
+                    body.a("if (JsonUtil.isObjectWithProperty(json, \"${propertyName}\") && " +
+                            "JsonUtil.is${type}(JsonUtil.getProperty(JsonUtil.toObject(json), \"${propertyName}\")) && " +
+                            "JsonUtil.equals(JsonUtil.getProperty(JsonUtil.toObject(json), \"${propertyName}\"), JsonUtil.parse${type}(" + escapeJavaString(value) + "))) {");
+                }
+                break;
+                default: {
+                    fail("Unknown union rule type: %s", rule.getRuleType());
+                }
+            }
+
+            body.c("valueType", jnt.toJavaTypeString(false));
+            body.c("readMethodName", readMethodName(jnt.getName(false, false)));
+
+            if (nt.isPrimitiveType()) {
+                assertion(!rootReachable.contains(t) || !rootReachable.contains(nt));
+                body.c("toMethod", determineToVariant((PrimitiveType) nt, "json"));
+                body.c("unionValueTypeImpl", jnt.getClassSource().getName());
+
+                body.a("    ${valueType} value = ${toMethod};");
+                body.a("    return new ${unionValueTypeImpl}(value);");
+
+                readerClassSource.addImport(jnt.getClassSource());
+
+            } else if (nt.isCollectionType()) {
+                assertion(!rootReachable.contains(t) || !rootReachable.contains(nt));
+                body.c("unionValueTypeImpl", jnt.getClassSource().getName());
+
+                body.a("    ${valueType} value = ${readMethodName}(json);");
+                body.a("    return new ${unionValueTypeImpl}(value);");
+
+                readerClassSource.addImport(jnt.getClassSource());
+
+            } else {
+                if (rootReachable.contains(t) && rootReachable.contains(nt)) {
+                    body.a("    return ${readMethodName}(json, isRoot);");
+                } else {
+                    body.a("    return ${readMethodName}(json);");
+                }
+            }
+
+            body.a("} else ");
+        });
+
+        body.a("{");
+        body.a("    return null;");
+        body.a("}");
+
+        methodSource.setBody(body.toString());
+    }
+
+    private void readMethodForListType(JavaClassSource readerClassSource, ListType t) {
+
+        var jt = getState().getJavaIndex().requireType(t);
+        jt.addImportsTo(readerClassSource);
+        var vt = t.getValueType();
+        var jvt = getState().getJavaIndex().requireType(vt);
+        jvt.addImportsTo(readerClassSource);
+
+        var methodSource = readerClassSource.addMethod()
+                .setName(readMethodName(jt.getName(false, false)))
+                .setReturnType(jt.toJavaTypeString(false))
+                .setPublic();
+
+        methodSource.addParameter(JsonNode.class.getSimpleName(), "json");
+
+        var body = new BodyBuilder();
+
+        body.c("valueType", jvt.toJavaTypeString(false));
+
+        // PREFIX
+
+        body.a("if (!JsonUtil.isArray(json)) {");
+        body.a("    return null;");
+        body.a("}");
+        body.a("List<JsonNode> anyList = JsonUtil.toList(json);");
+        body.a("if (anyList != null) {");
+        body.a("    List<${valueType}> res = new ArrayList<>(anyList.size());");
+        body.a("    for(JsonNode any: anyList) {");
+
+        readerClassSource.addImport(ArrayList.class);
+
+        if (vt.isPrimitiveType()) {
+
+            body.c("toMethod", determineToVariant((PrimitiveType) vt, "any"));
+            body.c("valueType", jvt.toJavaTypeString(false));
+
+            body.a("        ${valueType} value = ${toMethod};");
+
+        } else {
+
+            body.c("readMethodName", readMethodName(jvt.getName(false, false)));
+            body.a("        ${valueType} value = ${readMethodName}(any);");
+
+        }
+        body.append("        if(value != null) {");
+        body.append("            res.add(value);");
+        body.append("        } else {");
+        body.append("            return null;");
+        body.append("        }");
+
+        // POSTFIX
+
+        body.a("    }");
+        body.a("    return res;");
+        body.a("} else {");
+        body.a("    return null;");
+        body.a("}");
+
+        methodSource.setBody(body.toString());
+    }
+
+    private void readMethodForMapType(JavaClassSource readerClassSource, MapType t) {
+
+        var jt = getState().getJavaIndex().requireType(t);
+        jt.addImportsTo(readerClassSource);
+        var vt = t.getValueType();
+        var jvt = getState().getJavaIndex().requireType(vt);
+        jvt.addImportsTo(readerClassSource);
+
+        var methodSource = readerClassSource.addMethod()
+                .setName(readMethodName(jt.getName(false, false)))
+                .setReturnType(jt.toJavaTypeString(false))
+                .setPublic();
+
+        methodSource.addParameter(JsonNode.class.getSimpleName(), "json");
+
+        var body = new BodyBuilder();
+
+        body.c("valueType", jvt.toJavaTypeString(false));
+
+        // PREFIX
+
+        body.a("if (!JsonUtil.isObject(json)) {");
+        body.a("    return null;");
+        body.a("}");
+        body.a("Map<String, JsonNode> anyMap = JsonUtil.toMap(json);");
+        body.a("if (anyMap != null) {");
+        body.a("    Map<String, ${valueType}> res = new LinkedHashMap<>(anyMap.size());");
+        body.a("    for(Entry<String, JsonNode> any: anyMap.entrySet()) {");
+
+        readerClassSource.addImport(LinkedHashMap.class);
+        readerClassSource.addImport(Entry.class);
+
+        if (vt.isPrimitiveType()) {
+
+            body.c("toMethod", determineToVariant((PrimitiveType) vt, "any.getValue()"));
+            body.c("valueType", jvt.toJavaTypeString(false));
+
+            body.a("        ${valueType} value = ${toMethod};");
+
+        } else {
+
+            body.c("readMethodName", readMethodName(jvt.getName(false, false)));
+            body.a("        ${valueType} value = ${readMethodName}(any.getValue());");
+
+        }
+
+        body.append("        if(value != null) {");
+        body.append("            res.put(any.getKey(), value);");
+        body.append("        } else {");
+        body.append("            return null;");
+        body.append("        }");
+
+        // POSTFIX
+
+        body.a("    }");
+        body.a("    return res;");
+        body.a("} else {");
+        body.a("    return null;");
+        body.a("}");
+
+        methodSource.setBody(body.toString());
+    }
+
 
     /**
      * Creates code that will read any extra/remaining properties on a JSON object.
@@ -179,631 +666,20 @@ public class CreateReadersStage extends AbstractJavaStage {
         body.append("ReaderUtil.readExtraProperties(json, node);");
     }
 
-    @Data
-    @AllArgsConstructor
-    private class CreateReadPropertySnippet {
-        PropertyModelWithOrigin propertyWithOrigin;
-        EntityModel entityModel;
-        JavaInterfaceSource javaEntity;
-        JavaClassSource readerClassSource;
 
-        /**
-         * Generates code to read a property from a JSON node into the data model.
-         *
-         * @param body
-         */
-        public void writeTo(BodyBuilder body) {
-            PropertyModel property = propertyWithOrigin.getProperty();
-            if ("*".equals(property.getName())) {
-                handleStarProperty(body);
-            } else if (property.getName().startsWith("/")) {
-                handleRegexProperty(body);
-            } else if (property.getType().isEntityType()) {
-                handleEntityProperty(body);
-            } else if (property.getType().isPrimitiveType()) {
-                handlePrimitiveTypeProperty(body);
-            } else if (property.getType().isList()) {
-                handleListProperty(body);
-            } else if (property.getType().isMap()) {
-                handleMapProperty(body);
-            } else if (property.getType().isUnion()) {
-                handleUnionProperty(body);
-            } else {
-                warn("Entity property '" + property.getName() + "' not read (unsupported) for entity: " + entityModel.fullyQualifiedName());
-                warn("       property type: " + property.getType());
-            }
+    private static String determineToVariant(PrimitiveType type, String var) {
+        Class<?> _class = type.get_class();
+        if (ObjectNode.class.equals(_class)) {
+            return "JsonUtil.toObject(" + var + ")";
+        } else if (JsonNode.class.equals(_class)) {
+            return var;
+        } else {
+            return "JsonUtil.to" + _class.getSimpleName() + "(" + var + ")";
         }
+    }
 
-        private void handleStarProperty(BodyBuilder body) {
-            PropertyModel property = propertyWithOrigin.getProperty();
-            if (isEntity(property)) {
-                String entityTypeName = entityModel.getNamespace().fullName() + "." + property.getType().getSimpleType();
-                EntityModel propertyTypeEntity = getState().getConceptIndex().lookupEntity(entityTypeName);
-                if (propertyTypeEntity == null) {
-                    warn("STAR Property entity type not found for property: '" + property.getName() + "' of entity: " + entityModel.fullyQualifiedName());
-                    warn("       property type: " + property.getType());
-                    return;
-                }
-                JavaInterfaceSource propertyTypeJavaEntity = getState().getJavaIndex().lookupInterface(getJavaEntityInterfaceFQN(propertyTypeEntity));
-                if (propertyTypeJavaEntity == null) {
-                    warn("STAR Entity property '" + property.getName() + "' not read (unsupported) for entity: " + entityModel.fullyQualifiedName());
-                    warn("       property type is entity but not found in JAVA index: " + property.getType());
-                    return;
-                }
-                readerClassSource.addImport(propertyTypeJavaEntity);
-                readerClassSource.addImport(List.class);
 
-                body.addContext("entityJavaType", propertyTypeJavaEntity.getName());
-                body.addContext("createMethodName", createMethodName(propertyTypeEntity));
-                body.addContext("readMethodName", readMethodName(propertyTypeEntity));
-                body.addContext("addMethodName", "addItem");
-
-                body.append("{");
-                body.append("    List<String> propertyNames = JsonUtil.keys(json);");
-                body.append("    propertyNames.forEach(name -> {");
-                body.append("        ObjectNode object = JsonUtil.consumeObjectProperty(json, name);");
-                body.append("        if (object != null) {");
-                body.append("            ${entityJavaType} model = (${entityJavaType}) node.${createMethodName}();");
-                body.append("            this.${readMethodName}(object, model);");
-                body.append("            node.${addMethodName}(name, model);");
-                body.append("        }");
-                body.append("    });");
-                body.append("}");
-            } else if (isPrimitive(property) || isPrimitiveList(property) || isPrimitiveMap(property)) {
-                readerClassSource.addImport(List.class);
-                if (property.getType().isMap()) {
-                    readerClassSource.addImport(Map.class);
-                }
-
-                body.addContext("valueType", determineValueType(property.getType()));
-                body.addContext("consumePropertyMethodName", determineConsumePropertyVariant(property.getType()));
-
-                body.append("{");
-                body.append("    List<String> propertyNames = JsonUtil.keys(json);");
-                body.append("    propertyNames.forEach(name -> {");
-                body.append("        ${valueType} value = JsonUtil.${consumePropertyMethodName}(json, name);");
-                body.append("        node.addItem(name, value);");
-                body.append("    });");
-                body.append("}");
-            } else {
-                warn("STAR Entity property '" + property.getName() + "' not read (unhandled) for entity: " + entityModel.fullyQualifiedName());
-                warn("       property type: " + property.getType());
-            }
-        }
-
-        private void handleRegexProperty(BodyBuilder body) {
-            PropertyModel property = propertyWithOrigin.getProperty();
-            if (isEntity(property)) {
-                String entityTypeName = entityModel.getNamespace().fullName() + "." + property.getType().getSimpleType();
-                EntityModel propertyTypeEntity = getState().getConceptIndex().lookupEntity(entityTypeName);
-                if (propertyTypeEntity == null) {
-                    warn("REGEX Property entity type not found for property: '" + property.getName() + "' of entity: " + entityModel.fullyQualifiedName());
-                    warn("       property type: " + property.getType());
-                    return;
-                }
-                JavaInterfaceSource propertyTypeJavaEntity = getState().getJavaIndex().lookupInterface(getJavaEntityInterfaceFQN(propertyTypeEntity));
-                if (propertyTypeJavaEntity == null) {
-                    warn("REGEX Entity property '" + property.getName() + "' not read (unsupported) for entity: " + entityModel.fullyQualifiedName());
-                    warn("       property type is entity but not found in JAVA index: " + property.getType());
-                    return;
-                }
-                readerClassSource.addImport(propertyTypeJavaEntity);
-                readerClassSource.addImport(List.class);
-
-                body.addContext("propertyRegex", encodeRegex(extractRegex(property.getName())));
-                body.addContext("entityJavaType", propertyTypeJavaEntity.getName());
-                body.addContext("createMethodName", createMethodName(propertyTypeEntity));
-                body.addContext("readMethodName", readMethodName(propertyTypeEntity));
-                body.addContext("addMethodName", addMethodName(singularize(property.getCollection())));
-
-                body.append("{");
-                body.append("    List<String> propertyNames = JsonUtil.matchingKeys(\"${propertyRegex}\", json);");
-                body.append("    propertyNames.forEach(name -> {");
-                body.append("        ObjectNode object = JsonUtil.consumeObjectProperty(json, name);");
-                body.append("        if (object != null) {");
-                body.append("            ${entityJavaType} model = (${entityJavaType}) node.${createMethodName}();");
-                body.append("            this.${readMethodName}(object, model);");
-                body.append("            node.${addMethodName}(name, model);");
-                body.append("        }");
-                body.append("    });");
-                body.append("}");
-            } else if (isPrimitive(property) || isPrimitiveList(property) || isPrimitiveMap(property)) {
-                readerClassSource.addImport(List.class);
-                if (property.getType().isMap()) {
-                    readerClassSource.addImport(Map.class);
-                }
-
-                body.addContext("propertyRegex", encodeRegex(extractRegex(property.getName())));
-                body.addContext("valueType", determineValueType(property.getType()));
-                body.addContext("consumeProperty", determineConsumePropertyVariant(property.getType()));
-                body.addContext("addMethodName", addMethodName(singularize(property.getCollection())));
-
-                body.append("{");
-                body.append("    List<String> propertyNames = JsonUtil.matchingKeys(\"${propertyRegex}\", json);");
-                body.append("    propertyNames.forEach(name -> {");
-                body.append("        ${valueType} value = JsonUtil.${consumeProperty}(json, name);");
-                body.append("        node.${addMethodName}(name, value);");
-                body.append("    });");
-                body.append("}");
-            } else {
-                warn("REGEX Entity property '" + property.getName() + "' not read (unsupported) for entity: " + entityModel.fullyQualifiedName());
-                warn("       property type: " + property.getType());
-            }
-        }
-
-        private void handleEntityProperty(BodyBuilder body) {
-            PropertyModel property = propertyWithOrigin.getProperty();
-            String propertyTypeEntityName = entityModel.getNamespace().fullName() + "." + property.getType().getSimpleType();
-            EntityModel propertyTypeEntity = getState().getConceptIndex().lookupEntity(propertyTypeEntityName);
-            if (propertyTypeEntity == null) {
-                warn("Property entity type not found for property: '" + property.getName() + "' of entity: " + entityModel.fullyQualifiedName());
-                warn("       property type: " + property.getType());
-                return;
-            }
-            JavaInterfaceSource propertyTypeJavaEntity = resolveJavaEntityType(entityModel.getNamespace(), property);
-            readerClassSource.addImport(propertyTypeJavaEntity);
-
-            body.addContext("propertyName", property.getName());
-            body.addContext("setterMethodName", setterMethodName(property));
-            body.addContext("createMethodName", createMethodName(propertyTypeEntity));
-            body.addContext("getterMethodName", getterMethodName(property));
-            body.addContext("readMethodName", readMethodName(propertyTypeEntity));
-            body.addContext("propertyEntityType", propertyTypeJavaEntity.getName());
-
-            body.append("{");
-            body.append("    ObjectNode object = JsonUtil.consumeObjectProperty(json, \"${propertyName}\");");
-            body.append("    if (object != null) {");
-            body.append("        node.${setterMethodName}(node.${createMethodName}());");
-            body.append("        ${readMethodName}(object, (${propertyEntityType}) node.${getterMethodName}());");
-            body.append("    }");
-            body.append("}");
-        }
-
-        private void handlePrimitiveTypeProperty(BodyBuilder body) {
-            PropertyModel property = propertyWithOrigin.getProperty();
-            body.addContext("valueType", determineValueType(property.getType()));
-            body.addContext("consumeProperty", determineConsumePropertyVariant(property.getType()));
-            body.addContext("propertyName", property.getName());
-            body.addContext("setterMethodName", setterMethodName(property));
-
-            body.append("{");
-            body.append("    ${valueType} value = JsonUtil.${consumeProperty}(json, \"${propertyName}\");");
-            body.append("    node.${setterMethodName}(value);");
-            body.append("}");
-        }
-
-        private void handleListProperty(BodyBuilder body) {
-            PropertyModel property = propertyWithOrigin.getProperty();
-            body.addContext("propertyName", property.getName());
-            body.addContext("setterMethodName", setterMethodName(property));
-
-            PropertyType listValuePropertyType = property.getType().getNested().iterator().next();
-            if (listValuePropertyType.isPrimitiveType()) {
-                body.addContext("consumeMethodName", determineConsumePropertyVariant(property.getType()));
-                body.addContext("propertyValueJavaType", determineValueType(property.getType()));
-                readerClassSource.addImport(List.class);
-
-                body.append("{");
-                body.append("    ${propertyValueJavaType} value = JsonUtil.${consumeMethodName}(json, \"${propertyName}\");");
-                body.append("    node.${setterMethodName}(value);");
-                body.append("}");
-            } else if (listValuePropertyType.isEntityType()) {
-                String entityTypeName = listValuePropertyType.getSimpleType();
-                String fqEntityName = entityModel.getNamespace().fullName() + "." + entityTypeName;
-                EntityModel entityTypeModel = getState().getConceptIndex().lookupEntity(fqEntityName);
-                if (entityTypeModel == null) {
-                    warn("LIST Entity property '" + property.getName() + "' not read (unsupported) for entity: " + entityModel.fullyQualifiedName());
-                    warn("       property type is entity but not found in index: " + property.getType());
-                    return;
-                }
-                JavaInterfaceSource entityTypeJavaModel = getState().getJavaIndex().lookupInterface(getJavaEntityInterfaceFQN(entityTypeModel));
-                if (entityTypeJavaModel == null) {
-                    warn("LIST Entity property '" + property.getName() + "' not read (unsupported) for entity: " + entityModel.fullyQualifiedName());
-                    warn("       property type is entity but not found in JAVA index: " + property.getType());
-                    return;
-                }
-                readerClassSource.addImport(entityTypeJavaModel);
-                readerClassSource.addImport(List.class);
-
-                body.addContext("listValueJavaType", entityTypeJavaModel.getName());
-                body.addContext("createMethodName", createMethodName(entityTypeModel));
-                body.addContext("readMethodName", readMethodName(entityTypeModel));
-                body.addContext("addMethodName", addMethodName(singularize(property.getName())));
-
-                body.append("{");
-                body.append("    List<ObjectNode> objects = JsonUtil.consumeObjectArrayProperty(json, \"${propertyName}\");");
-                body.append("    if (objects != null) {");
-                body.append("        objects.forEach(object -> {");
-                body.append("            ${listValueJavaType} model = (${listValueJavaType}) node.${createMethodName}();");
-                body.append("            this.${readMethodName}(object, model);");
-                body.append("            node.${addMethodName}(model);");
-                body.append("        });");
-                body.append("    }");
-                body.append("}");
-            } else {
-                warn("LIST Entity property '" + property.getName() + "' not read (unsupported) for entity: " + entityModel.fullyQualifiedName());
-                warn("       property type: " + property.getType());
-            }
-        }
-
-        private void handleMapProperty(BodyBuilder body) {
-            PropertyModel property = propertyWithOrigin.getProperty();
-            body.addContext("propertyName", property.getName());
-            body.addContext("setterMethodName", setterMethodName(property));
-
-            PropertyType mapValuePropertyType = property.getType().getNested().iterator().next();
-            if (mapValuePropertyType.isPrimitiveType()) {
-                body.addContext("consumeMethodName", determineConsumePropertyVariant(property.getType()));
-                body.addContext("propertyValueJavaType", determineValueType(property.getType()));
-                readerClassSource.addImport(Map.class);
-
-                body.append("{");
-                body.append("    ${propertyValueJavaType} value = JsonUtil.${consumeMethodName}(json, \"${propertyName}\");");
-                body.append("    node.${setterMethodName}(value);");
-                body.append("}");
-            } else if (mapValuePropertyType.isEntityType()) {
-                String entityTypeName = mapValuePropertyType.getSimpleType();
-                String fqEntityName = entityModel.getNamespace().fullName() + "." + entityTypeName;
-                EntityModel entityTypeModel = getState().getConceptIndex().lookupEntity(fqEntityName);
-                if (entityTypeModel == null) {
-                    warn("MAP Entity property '" + property.getName() + "' not read (unsupported) for entity: " + entityModel.fullyQualifiedName());
-                    warn("       property type is entity but not found in index: " + property.getType());
-                    return;
-                }
-                JavaInterfaceSource entityTypeJavaModel = getState().getJavaIndex().lookupInterface(getJavaEntityInterfaceFQN(entityTypeModel));
-                if (entityTypeJavaModel == null) {
-                    warn("MAP Entity property '" + property.getName() + "' not read (unsupported) for entity: " + entityModel.fullyQualifiedName());
-                    warn("       property type is entity but not found in JAVA index: " + property.getType());
-                    return;
-                }
-                readerClassSource.addImport(entityTypeJavaModel);
-
-                body.addContext("mapValueJavaType", entityTypeJavaModel.getName());
-                body.addContext("createMethodName", "create" + entityTypeName);
-                body.addContext("readMethodName", "read" + entityTypeName);
-                body.addContext("addMethodName", addMethodName(singularize(property.getName())));
-
-                body.append("{");
-                body.append("    ObjectNode object = JsonUtil.consumeObjectProperty(json, \"${propertyName}\");");
-                body.append("    JsonUtil.keys(object).forEach(name -> {");
-                body.append("        ObjectNode mapValue = JsonUtil.consumeObjectProperty(object, name);");
-                body.append("        if (mapValue != null) {");
-                body.append("            ${mapValueJavaType} model = (${mapValueJavaType}) node.${createMethodName}();");
-                body.append("            this.${readMethodName}(mapValue, model);");
-                body.append("            node.${addMethodName}(name, model);");
-                body.append("        }");
-                body.append("    });");
-                body.append("}");
-            } else {
-                warn("MAP Entity property '" + property.getName() + "' not read (unsupported) for entity: " + entityModel.fullyQualifiedName());
-                warn("       property type: " + property.getType());
-            }
-        }
-
-        // TODO handle entity maps! (we already support entity lists) (note: we already support entity maps in the writers)
-        private void handleUnionProperty(BodyBuilder body) {
-            PropertyModel property = propertyWithOrigin.getProperty();
-            NamespaceModel nsContext = propertyWithOrigin.getOrigin().getNamespace();
-            UnionPropertyType ut = new UnionPropertyType(property.getType());
-
-            readerClassSource.addImport(JsonNode.class);
-
-            body.addContext("unionJavaType", ut.toJavaTypeString());
-            body.addContext("propertyName", property.getName());
-            body.addContext("getterMethodName", getterMethodName(property));
-            body.addContext("setterMethodName", setterMethodName(property));
-
-            body.append("{");
-            body.append("    JsonNode value = JsonUtil.consumeAnyProperty(json, \"${propertyName}\");");
-            body.append("    if (value != null) {");
-
-            // Sort the nested types - make sure any entity types with union rules come first.  This is
-            // also an opportunity to order any of the checks we might need.  E.g. if we need isString()
-            // checks to happen before isNumber() for some reason.  Consider this an area for future
-            // improvement.
-            List<PropertyType> sortedNestedTypes = ut.getNestedTypes().stream().sorted(new Comparator<PropertyType>() {
-                @Override
-                public int compare(PropertyType o1, PropertyType o2) {
-                    if (o1.isEntityType() && o2.isEntityType()) {
-                        UnionRule rule1 = property.getRuleFor(o1.asRawType());
-                        UnionRule rule2 = property.getRuleFor(o2.asRawType());
-                        if (rule1 != null && rule2 == null) {
-                            return -1;
-                        } else if (rule1 == null && rule2 != null) {
-                            return 1;
-                        }
-                    }
-                    return o1.asRawType().compareTo(o2.asRawType());
-                }
-            }).collect(Collectors.toUnmodifiableList());
-
-            // Now generate a block of reader code for each nested type.  Since this
-            // property can be different things, we need to figure out what it is first,
-            // and then properly read it based on that result.  This is easy for things like
-            // 'string|boolean' types.  But for 'Entity1|Entity2' types, we need to
-            // employ the configured union rules.
-            // TODO support union rules for non-entity union types (e.g. maps and lists) for currently
-            //      unsupported use cases (like '[string]|[number]').
-            boolean first = true;
-            for (PropertyType nestedType : sortedNestedTypes) {
-                if (!first) {
-                    body.append(" else ");
-                }
-                first = false;
-                JavaType jt = new JavaType(nestedType, nsContext);
-                if (jt.isPrimitive()) {
-                    String javaTypeName = jt.toJavaTypeString();
-                    String isMethodName = "is" + javaTypeName;
-                    String toMethodName = "to" + javaTypeName;
-                    String unionValueInterfaceName = javaTypeName + "UnionValue";
-                    String unionValueClassName = unionValueInterfaceName + "Impl";
-                    JavaInterfaceSource unionValueInterface = getState().getJavaIndex().lookupInterface(getUnionTypeFQN(unionValueInterfaceName));
-                    JavaClassSource unionValueClass = getState().getJavaIndex().lookupClass(getUnionTypeFQN(unionValueClassName));
-
-                    body.addContext("javaTypeName", javaTypeName);
-                    body.addContext("isMethodName", isMethodName);
-                    body.addContext("toMethodName", toMethodName);
-                    body.addContext("unionValueInterfaceName", unionValueInterfaceName);
-                    body.addContext("unionValueClassName", unionValueClassName);
-
-                    body.append("if (JsonUtil.${isMethodName}(value)) {");
-                    body.append("    ${javaTypeName} pValue = JsonUtil.${toMethodName}(value);");
-                    body.append("    ${unionValueInterfaceName} unionValue = new ${unionValueClassName}(pValue);");
-                    body.append("    node.${setterMethodName}(unionValue);");
-                    body.append("}");
-
-                    readerClassSource.addImport(unionValueInterface);
-                    readerClassSource.addImport(unionValueClass);
-                } else if (jt.isPrimitiveList()) {
-                    String nestedJavaTypeName = getTypeName(nestedType.getNested().iterator().next());
-                    String unionValueName = getTypeName(nestedType);
-                    String toMethodName = "to" + nestedJavaTypeName;
-                    String unionValueInterfaceName = unionValueName + "UnionValue";
-                    String unionValueClassName = unionValueInterfaceName + "Impl";
-                    JavaInterfaceSource unionValueInterface = getState().getJavaIndex().lookupInterface(getUnionTypeFQN(unionValueInterfaceName));
-                    JavaClassSource unionValueClass = getState().getJavaIndex().lookupClass(getUnionTypeFQN(unionValueClassName));
-
-                    if (unionValueInterface == null || unionValueClassName == null) {
-                        warn("Missing primitive list Union Value interface or class: " + unionValueName);
-                        return;
-                    }
-
-                    body.addContext("toMethodName", toMethodName);
-                    body.addContext("javaTypeName", nestedJavaTypeName);
-                    body.addContext("unionValueInterfaceName", unionValueInterfaceName);
-                    body.addContext("unionValueClassName", unionValueClassName);
-
-                    body.append("if (JsonUtil.isArray(value)) {");
-                    body.append("    List<JsonNode> array = JsonUtil.toList(value);");
-                    body.append("    List<${javaTypeName}> items = new ArrayList<>();");
-                    body.append("    array.forEach(item -> {");
-                    body.append("        ${javaTypeName} pValue = JsonUtil.${toMethodName}(item);");
-                    body.append("        items.add(pValue);");
-                    body.append("    });");
-                    body.append("    ${unionValueInterfaceName} unionValue = new ${unionValueClassName}(items);");
-                    body.append("    node.${setterMethodName}(unionValue);");
-                    body.append("}");
-
-                    readerClassSource.addImport(unionValueInterface);
-                    readerClassSource.addImport(unionValueClass);
-                    readerClassSource.addImport(JsonNode.class);
-                    readerClassSource.addImport(List.class);
-                    readerClassSource.addImport(ArrayList.class);
-                } else if (jt.isEntity()) {
-                    NamespaceModel nestedTypeEntityNS = entityModel.getNamespace();
-                    String nestedTypeEntityName = nestedTypeEntityNS.fullName() + "." + nestedType.getSimpleType();
-                    EntityModel nestedTypeEntity = getState().getConceptIndex().lookupEntity(nestedTypeEntityName);
-                    if (nestedTypeEntity == null) {
-                        warn("Property union type with entity sub-type not found for property: '" + property.getName() + "' of entity: " + entityModel.fullyQualifiedName());
-                        warn("       nested union type: " + nestedType);
-                        return;
-                    }
-                    JavaInterfaceSource entityJavaSource = resolveJavaEntityType(nestedTypeEntityNS, nestedType);
-                    if (entityJavaSource == null) {
-                        warn("Property union type with entity sub-type not found (in java index) for property: '" + property.getName() + "' of entity: " + entityModel.fullyQualifiedName());
-                        warn("       nested union type: " + nestedType);
-                        return;
-                    }
-                    readerClassSource.addImport(entityJavaSource);
-
-                    body.addContext("setterMethodName", setterMethodName(property));
-                    body.addContext("createMethodName", createMethodName(nestedTypeEntity));
-                    body.addContext("getterMethodName", getterMethodName(property));
-                    body.addContext("readMethodName", readMethodName(nestedTypeEntity));
-                    body.addContext("propertyEntityType", entityJavaSource.getName());
-
-                    UnionRule unionRule = property.getRuleFor(nestedType.asRawType());
-                    if (unionRule == null) {
-                        body.append("if (JsonUtil.isObject(value)) {");
-                    } else {
-                        body.addContext("rulePropertyName", unionRule.getPropertyName());
-                        if (unionRule.getRuleType() == UnionRuleType.propertyExists) {
-                            body.append("if (JsonUtil.isObjectWithProperty(value, \"${rulePropertyName}\")) {");
-                        } else if (unionRule.getRuleType() == UnionRuleType.propertyValue) {
-                            body.addContext("rulePropertyValue", unionRule.getPropertyValue());
-                            body.append("if (JsonUtil.isObjectWithPropertyValue(value, \"${rulePropertyName}\", \"${rulePropertyValue}\")) {");
-                        } else {
-                            throw new RuntimeException("Unsupported union rule: " + unionRule.getRuleType());
-                        }
-                    }
-
-                    body.append("    ObjectNode object = JsonUtil.toObject(value);");
-                    body.append("    node.${setterMethodName}(node.${createMethodName}());");
-                    body.append("    ${readMethodName}(object, (${propertyEntityType}) node.${getterMethodName}());");
-                    body.append("}");
-                } else if (jt.isEntityList()) {
-                    String unionValueName = getTypeName(nestedType);
-                    String unionValueInterfaceName = unionValueName + "UnionValue";
-                    String unionValueClassName = unionValueInterfaceName + "Impl";
-                    JavaInterfaceSource unionValueInterface = getState().getJavaIndex().lookupInterface(getUnionTypeFQN(unionValueInterfaceName));
-                    JavaClassSource unionValueClass = getState().getJavaIndex().lookupClass(getUnionTypeFQN(unionValueClassName));
-                    if (unionValueInterface == null || unionValueClassName == null) {
-                        warn("Missing entity list Union Value interface or class (this should have been generated!): " + unionValueName);
-                        return;
-                    }
-
-                    PropertyType listItemType = nestedType.getNested().iterator().next();
-                    String listItemEntityName = entityModel.getNamespace().fullName() + "." + listItemType.getSimpleType();
-                    EntityModel listItemEntity = getState().getConceptIndex().lookupEntity(listItemEntityName);
-                    if (listItemEntity == null) {
-                        warn("Property union type with entity sub-type not found for property: '" + property.getName() + "' of entity: " + entityModel.fullyQualifiedName());
-                        warn("       nested union type: " + nestedType);
-                        return;
-                    }
-                    JavaInterfaceSource listItemEntitySource = getState().getJavaIndex().lookupInterface(getJavaEntityInterfaceFQN(listItemEntity));
-                    if (listItemEntitySource == null) {
-                        warn("Property union type with entity sub-type not found (in java index) for property: '" + property.getName() + "' of entity: " + entityModel.fullyQualifiedName());
-                        warn("       nested union type: " + listItemType);
-                        return;
-                    }
-
-                    readerClassSource.addImport(listItemEntitySource);
-                    readerClassSource.addImport(unionValueInterface);
-                    readerClassSource.addImport(unionValueClass);
-                    readerClassSource.addImport(JsonNode.class);
-                    readerClassSource.addImport(List.class);
-                    readerClassSource.addImport(ArrayList.class);
-
-                    body.addContext("unionValueInterfaceName", unionValueInterfaceName);
-                    body.addContext("unionValueClassName", unionValueClassName);
-                    body.addContext("listValueJavaType", listItemEntitySource.getName());
-                    body.addContext("setterMethodName", setterMethodName(property));
-                    body.addContext("createMethodName", createMethodName(listItemEntity));
-                    body.addContext("getterMethodName", getterMethodName(property));
-                    body.addContext("readMethodName", readMethodName(listItemEntity));
-
-                    body.append("if (JsonUtil.isArray(value)) {");
-                    body.append("    List<JsonNode> array = JsonUtil.toList(value);");
-                    body.append("    List<${listValueJavaType}> models = new ArrayList<>();");
-                    body.append("    array.forEach(item -> {");
-                    body.append("        ObjectNode object = JsonUtil.toObject(item);");
-                    body.append("        ${listValueJavaType} model = (${listValueJavaType}) node.${createMethodName}();");
-                    body.append("        this.${readMethodName}(object, model);");
-                    body.append("        models.add(model);");
-                    body.append("    });");
-                    body.append("    @SuppressWarnings({ \"unchecked\", \"rawtypes\" })");
-                    body.append("    ${unionValueInterfaceName} unionValue = new ${unionValueClassName}((List) models);");
-                    body.append("    node.${setterMethodName}(unionValue);");
-                    body.append("}");
-                } else {
-                    // TODO implement handling for entity maps
-                    warn("UNION Entity property '" + property.getName() + "' not read (unsupported union subtype) for entity: " + entityModel.fullyQualifiedName());
-                    warn("       property type: " + property.getType());
-                    body.append("if (Boolean.TRUE) {}");
-                }
-            }
-            body.append("        else {");
-            body.append("            node.addExtraProperty(\"${propertyName}\", value);");
-            body.append("        }");
-            body.append("    }");
-            body.append("}");
-        }
-
-        /**
-         * Figure out which variant of "consumeProperty" from "JsonUtil" we should use for
-         * this property.  The property might be a primitive type, or a list/map of primitive
-         * types, or an Entity type, or a list/map of Entity types.
-         *
-         * @param type
-         */
-        private String determineConsumePropertyVariant(PropertyType type) {
-            if (type.isEntityType()) {
-                return "consumeObjectProperty";
-            }
-
-            if (type.isPrimitiveType()) {
-                Class<?> _class = primitiveTypeToClass(type);
-                if (ObjectNode.class.equals(_class)) {
-                    readerClassSource.addImport(_class);
-                    return "consumeObjectProperty";
-                } else if (JsonNode.class.equals(_class)) {
-                    readerClassSource.addImport(_class);
-                    return "consumeAnyProperty";
-                } else {
-                    return "consume" + _class.getSimpleName() + "Property";
-                }
-            }
-
-            if (type.isList()) {
-                PropertyType listType = type.getNested().iterator().next();
-                if (listType.isPrimitiveType()) {
-                    Class<?> _class = primitiveTypeToClass(listType);
-                    if (ObjectNode.class.equals(_class)) {
-                        readerClassSource.addImport(_class);
-                        return "consumeObjectArrayProperty";
-                    } else if (JsonNode.class.equals(_class)) {
-                        readerClassSource.addImport(_class);
-                        return "consumeAnyArrayProperty";
-                    } else {
-                        return "consume" + _class.getSimpleName() + "ArrayProperty";
-                    }
-                }
-            }
-
-            if (type.isMap()) {
-                PropertyType mapType = type.getNested().iterator().next();
-                if (mapType.isPrimitiveType()) {
-                    Class<?> _class = primitiveTypeToClass(mapType);
-                    if (ObjectNode.class.equals(_class)) {
-                        readerClassSource.addImport(_class);
-                        return "consumeObjectMapProperty";
-                    } else if (JsonNode.class.equals(_class)) {
-                        readerClassSource.addImport(_class);
-                        return "consumeAnyMapProperty";
-                    } else {
-                        return "consume" + _class.getSimpleName() + "MapProperty";
-                    }
-                }
-            }
-
-            PropertyModel property = propertyWithOrigin.getProperty();
-            warn("Unable to determine value type for: " + property);
-            return "consumeProperty";
-        }
-
-        /**
-         * Determines the Java data type of the given property.
-         *
-         * @param type
-         */
-        private String determineValueType(PropertyType type) {
-            if (type.isPrimitiveType()) {
-                Class<?> _class = primitiveTypeToClass(type);
-                if (_class != null) {
-                    readerClassSource.addImport(_class);
-                    return _class.getSimpleName();
-                }
-            }
-
-            if (type.isList()) {
-                PropertyType listType = type.getNested().iterator().next();
-                if (listType.isPrimitiveType()) {
-                    Class<?> _class = primitiveTypeToClass(listType);
-                    if (_class != null) {
-                        readerClassSource.addImport(_class);
-                        return "List<" + _class.getSimpleName() + ">";
-                    }
-                }
-            }
-
-            if (type.isMap()) {
-                PropertyType mapType = type.getNested().iterator().next();
-                if (mapType.isPrimitiveType()) {
-                    Class<?> _class = primitiveTypeToClass(mapType);
-                    if (_class != null) {
-                        readerClassSource.addImport(_class);
-                        return "Map<String, " + _class.getSimpleName() + ">";
-                    }
-                }
-            }
-
-            PropertyModel property = propertyWithOrigin.getProperty();
-            warn("Unable to determine value type for: " + property);
-            return "Object";
-        }
-
-        private String encodeRegex(String regex) {
-            return regex.replace("\\", "\\\\");
-        }
+    private static String encodeRegex(String regex) {
+        return regex.replace("\\", "\\\\");
     }
 }

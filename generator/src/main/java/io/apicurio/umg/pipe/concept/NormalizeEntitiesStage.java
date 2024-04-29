@@ -1,14 +1,19 @@
 package io.apicurio.umg.pipe.concept;
 
+import io.apicurio.umg.models.concept.EntityModel;
+import io.apicurio.umg.models.concept.NamespaceModel;
+import io.apicurio.umg.models.concept.type.EntityType;
+import io.apicurio.umg.models.concept.type.Type;
+import io.apicurio.umg.pipe.AbstractStage;
+
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.stream.Collectors;
 
-import io.apicurio.umg.models.concept.EntityModel;
-import io.apicurio.umg.models.concept.NamespaceModel;
-import io.apicurio.umg.pipe.AbstractStage;
+import static io.apicurio.umg.logging.Errors.assertion;
 
 public class NormalizeEntitiesStage extends AbstractStage {
 
@@ -22,18 +27,18 @@ public class NormalizeEntitiesStage extends AbstractStage {
         // Keep working until we've processed every model (including any new models we
         // might create during processing).
         while (!modelsToProcess.isEmpty()) {
-            EntityModel traitModel = modelsToProcess.remove();
-            if (modelsProcessed.contains(traitModel.fullyQualifiedName())) {
+            EntityModel entity = modelsToProcess.remove();
+            if (modelsProcessed.contains(entity.fullyQualifiedName())) {
                 continue;
             }
 
             // Check if we need to create a parent entity for this model in any parent scope
-            NamespaceModel ancestorNamespaceModel = traitModel.getNamespace().getParent();
+            NamespaceModel ancestorNamespaceModel = entity.getNamespace().getParent();
             while (ancestorNamespaceModel != null) {
-                if (needsParentEntity(ancestorNamespaceModel, traitModel.getName())) {
+                if (needsParentEntity(ancestorNamespaceModel, entity.getName())) {
                     EntityModel ancestorEntity = EntityModel.builder()
-                            .name(traitModel.getName())
-                            .parent(traitModel.getParent())
+                            .name(entity.getName())
+                            .parent(entity.getParent())
                             .namespace(ancestorNamespaceModel)
                             .build();
                     ancestorNamespaceModel.getEntities().put(ancestorEntity.getName(), ancestorEntity);
@@ -44,9 +49,22 @@ public class NormalizeEntitiesStage extends AbstractStage {
                     // Make the new parent entity the actual parent of each child entity
                     childEntities.forEach(childEntity -> {
                         childEntity.setParent(ancestorEntity);
+
+                        // Add the new entity to type index
+                        // We need to set the parent, so look for type representing the current entity
+                        var entityType = getState().getConceptIndex().getEntityTypes()
+                                .filter(e -> e.getEntity().equals(childEntity))
+                                .collect(Collectors.toList());
+                        assertion(entityType.size() == 1);
+                        var ancestorType = getState().getConceptIndex().lookupOrIndex(EntityType.fromEntity(ancestorEntity));
+                        entityType.get(0).setParent(ancestorType);
+                        ancestorType.setLeaf(false);
+                        ancestorType.setRoot(entityType.get(0).isRoot());
+
                         // Skip processing this model if its turn comes up in the queue.
                         modelsProcessed.add(childEntity.fullyQualifiedName());
                     });
+
                     // break out of loop - no need to search further up the hierarchy
                     ancestorNamespaceModel = null;
                 } else {
