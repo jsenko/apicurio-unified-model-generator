@@ -37,9 +37,4 @@ public abstract class UnionValueImpl<T> implements UnionValue<T> {
 	public boolean isMapUnionValueWithAny() {
 		return false;
 	}
-
-	@Override
-	public void accept(Visitor visitor) {
-	}
-
 }
