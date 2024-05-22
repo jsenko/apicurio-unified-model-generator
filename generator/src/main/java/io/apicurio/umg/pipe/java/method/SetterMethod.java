@@ -6,6 +6,8 @@ import io.apicurio.umg.pipe.GeneratorState;
 import org.apache.commons.lang3.StringUtils;
 import org.jboss.forge.roaster.model.source.Importer;
 
+import static io.apicurio.umg.pipe.java.method.JavaUtils.markOverridden;
+
 public class SetterMethod {
 
     public static void create(GeneratorState state, JavaField field, boolean body) {
@@ -31,7 +33,7 @@ public class SetterMethod {
             bb.c("fieldName", field.getFieldName())
                     .a("this.${fieldName} = value;");
 
-            method.addAnnotation(Override.class);
+            markOverridden(method);
             method.setBody(bb.toString());
             method.setPublic();
         }

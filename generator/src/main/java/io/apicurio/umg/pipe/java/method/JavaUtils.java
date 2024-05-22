@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.apicurio.umg.models.concept.PropertyModel;
 import io.apicurio.umg.models.java.type.*;
 import io.apicurio.umg.pipe.GeneratorState;
+import org.jboss.forge.roaster.model.source.Importer;
 import org.jboss.forge.roaster.model.source.MethodHolderSource;
 import org.jboss.forge.roaster.model.source.MethodSource;
 import org.modeshape.common.text.Inflector;
@@ -96,13 +97,11 @@ public class JavaUtils {
         return parent.equals(t);
     }
 
-    public static Collection<PropertyModel> extractProperties(IJavaType javaType, boolean includeTraits) {
+    public static Collection<PropertyModel> extractProperties(IJavaType javaType, boolean includeNonTransparentTraits) {
         if (javaType instanceof EntityJavaType) {
             var res = new HashSet<PropertyModel>();
             res.addAll(((EntityJavaType) javaType).getTypeModel().getEntity().getProperties().values());
-            if (includeTraits) {
-                ((EntityJavaType) javaType).getTypeModel().getEntity().getTraits().forEach(t -> res.addAll(t.getProperties().values()));
-            }
+            ((EntityJavaType) javaType).getTypeModel().getEntity().getTraits().stream().filter(t -> t.isTransparent() || includeNonTransparentTraits).forEach(t -> res.addAll(t.getProperties().values()));
             return res;
         } else if (javaType instanceof TraitJavaType) {
             return ((TraitJavaType) javaType).getTypeModel().getTrait().getProperties().values();
@@ -110,5 +109,12 @@ public class JavaUtils {
             fail("TODO");
         }
         return null; // Unreachable
+    }
+
+    public static void markOverridden(MethodSource method) {
+        if (!method.hasAnnotation(Override.class)) {
+            method.addAnnotation(Override.class);
+            ((Importer<?>) method.getOrigin()).addImport(Override.class);
+        }
     }
 }

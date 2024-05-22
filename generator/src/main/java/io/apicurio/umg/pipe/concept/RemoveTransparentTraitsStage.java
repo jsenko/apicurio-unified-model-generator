@@ -19,10 +19,9 @@ public class RemoveTransparentTraitsStage extends AbstractStage {
         getState().getConceptIndex().findEntities("").forEach(entity -> {
             entity.getTraits().stream().filter(t -> t.isTransparent()).collect(Collectors.toSet()).forEach(trait -> {
                 // Copy all properties from the trait to the entity.
-                entity.getProperties().putAll(trait.getProperties());
+                trait.getProperties().values().stream().map(p -> p.copy()).forEach(p -> entity.getProperties().put(p.getName(), p));
                 // Remove trait from entity
                 entity.getTraits().remove(trait);
-
                 traitsToRemove.add(trait);
             });
         });

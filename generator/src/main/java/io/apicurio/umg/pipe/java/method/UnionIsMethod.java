@@ -7,6 +7,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jboss.forge.roaster.model.source.MethodHolderSource;
 
 import static io.apicurio.umg.logging.Errors.assertion;
+import static io.apicurio.umg.pipe.java.method.JavaUtils.markOverridden;
 
 public class UnionIsMethod {
 
@@ -25,7 +26,7 @@ public class UnionIsMethod {
                 .setReturnType(boolean.class);
 
         if (origin.getTypeModel().getParent() != null) {
-            method.addAnnotation(Override.class);
+            markOverridden(method);
         }
 
         if (body) {
@@ -34,7 +35,7 @@ public class UnionIsMethod {
             } else {
                 method.setBody("return false;");
             }
-            method.addAnnotation(Override.class);
+            markOverridden(method);
             method.setPublic();
         }
     }

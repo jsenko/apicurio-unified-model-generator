@@ -3,6 +3,7 @@ package io.apicurio.umg.pipe.java.method;
 import io.apicurio.umg.models.concept.PropertyModel;
 import io.apicurio.umg.models.java.JavaField;
 
+import static io.apicurio.umg.pipe.java.method.JavaUtils.markOverridden;
 import static org.apache.commons.lang3.StringUtils.capitalize;
 
 public class ClearMethod {
@@ -14,7 +15,7 @@ public class ClearMethod {
                 .setReturnTypeVoid();
 
         if (body) {
-            method.addAnnotation(Override.class);
+            markOverridden(method);
             method.setBody(
                     BodyBuilder.create()
                             .c("fieldName", field.getFieldName())

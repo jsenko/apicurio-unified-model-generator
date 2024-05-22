@@ -8,8 +8,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jboss.forge.roaster.model.source.Importer;
 
 import static io.apicurio.umg.logging.Errors.fail;
-import static io.apicurio.umg.pipe.java.method.JavaUtils.collectNestedJavaTypes;
-import static io.apicurio.umg.pipe.java.method.JavaUtils.hasMethod;
+import static io.apicurio.umg.pipe.java.method.JavaUtils.*;
 
 public class CreateFactoryMethod {
 
@@ -48,7 +47,7 @@ public class CreateFactoryMethod {
         ancestorType.addImportsTo((Importer<?>) field.getMethodSource());
 
         if (body) {
-            method.addAnnotation(Override.class);
+            markOverridden(method);
             method.setBody(
                     BodyBuilder.create()
                             .c("class", ancestorType.toJavaTypeString(false))

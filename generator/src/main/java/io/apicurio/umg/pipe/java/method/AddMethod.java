@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
 import static io.apicurio.umg.logging.Errors.fail;
+import static io.apicurio.umg.pipe.java.method.JavaUtils.markOverridden;
 import static io.apicurio.umg.pipe.java.method.JavaUtils.singularize;
 import static org.apache.commons.lang3.StringUtils.capitalize;
 
@@ -36,7 +37,7 @@ public class AddMethod {
             field.getType().addImportsTo((Importer<?>) field.getMethodSource());
 
             if (body) {
-                method.addAnnotation(Override.class);
+                markOverridden(method);
                 method.setBody(
                         BodyBuilder.create()
                                 .c("fieldName", field.getFieldName())
@@ -67,7 +68,7 @@ public class AddMethod {
             field.getType().addImportsTo((Importer<?>) field.getMethodSource());
 
             if (body) {
-                method.addAnnotation(Override.class);
+                markOverridden(method);
                 method.setBody(
                         BodyBuilder.create()
                                 .c("fieldName", field.getFieldName())

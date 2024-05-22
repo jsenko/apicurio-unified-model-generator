@@ -8,6 +8,8 @@ import io.apicurio.umg.pipe.GeneratorState;
 import org.apache.commons.lang3.StringUtils;
 import org.jboss.forge.roaster.model.source.Importer;
 
+import static io.apicurio.umg.pipe.java.method.JavaUtils.markOverridden;
+
 public class GetterMethod {
 
     public static void create(GeneratorState state, JavaField field, boolean body) {
@@ -24,7 +26,7 @@ public class GetterMethod {
         field.getType().addImportsTo((Importer<?>) field.getMethodSource());
 
         if (body) {
-            method.addAnnotation(Override.class);
+            markOverridden(method);
             method.setBody(
                     BodyBuilder.create()
                             .c("fieldName", field.getFieldName())

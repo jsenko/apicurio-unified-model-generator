@@ -8,6 +8,7 @@ import io.apicurio.umg.pipe.GeneratorState;
 import org.jboss.forge.roaster.model.source.Importer;
 
 import static io.apicurio.umg.logging.Errors.fail;
+import static io.apicurio.umg.pipe.java.method.JavaUtils.markOverridden;
 import static io.apicurio.umg.pipe.java.method.JavaUtils.singularize;
 import static org.apache.commons.lang3.StringUtils.capitalize;
 
@@ -33,7 +34,7 @@ public class RemoveMethod {
             field.getType().addImportsTo((Importer<?>) field.getMethodSource());
 
             if (body) {
-                method.addAnnotation(Override.class);
+                markOverridden(method);
                 method.setBody(
                         BodyBuilder.create()
                                 .c("fieldName", field.getFieldName())
@@ -51,7 +52,7 @@ public class RemoveMethod {
             ((Importer<?>) field.getMethodSource()).addImport(String.class);
 
             if (body) {
-                method.addAnnotation(Override.class);
+                markOverridden(method);
                 method.setBody(
                         BodyBuilder.create()
                                 .c("fieldName", field.getFieldName())

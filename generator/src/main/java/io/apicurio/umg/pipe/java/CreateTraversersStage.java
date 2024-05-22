@@ -110,7 +110,7 @@ public class CreateTraversersStage extends AbstractVisitorStage {
 
             assertion(entityType != null);
 
-            String body = createTraversalMethodBody((EntityType) entityType);
+            String body = createTraversalMethodBody(traverserSource, (EntityType) entityType);
             methodSource.setBody(body);
         });
 
@@ -118,15 +118,17 @@ public class CreateTraversersStage extends AbstractVisitorStage {
         getState().getJavaIndex().index(traverserSource);
     }
 
-    private String createTraversalMethodBody(EntityType type) {
+    private String createTraversalMethodBody(JavaClassSource traverserSource, EntityType type) {
 
         EntityJavaType jt = (EntityJavaType) getState().getJavaIndex().requireType(type);
 
-        JavaInterfaceSource javaEntity = jt.getInterfaceSource();
-
         BodyBuilder body = new BodyBuilder();
 
-        body.a("node.accept(this.visitor);");
+        body.c("type", jt.getInterfaceSource().getName());
+        traverserSource.addImport(jt.getInterfaceSource());
+
+        body.a("${type} n = (${type}) node;");
+        body.a("n.accept(this.visitor);");
 
         var allProperties = JavaUtils.extractProperties(jt, true);
 
@@ -143,24 +145,24 @@ public class CreateTraversersStage extends AbstractVisitorStage {
                 if (pt.isEntityType()) {
 
                     if (p.isStar()) {
-                        body.append("traverseMappedNode(node);");
+                        body.append("traverseMappedNode(n);");
                     } else if (p.isRegex()) {
-                        body.append("traverseAnyMap(\"${propertyName}\", node.${propertyGetter}());");
+                        body.append("traverseAnyMap(\"${propertyName}\", n.${propertyGetter}());");
                     } else {
-                        body.append("traverseNode(\"${propertyName}\", node.${propertyGetter}());");
+                        body.append("traverseNode(\"${propertyName}\", n.${propertyGetter}());");
                     }
 
                 } else if (pt.isListType()) {
 
-                    body.append("traverseAnyList(\"${propertyName}\", node.${propertyGetter}());");
+                    body.append("traverseAnyList(\"${propertyName}\", n.${propertyGetter}());");
 
                 } else if (pt.isMapType()) {
 
-                    body.append("traverseAnyMap(\"${propertyName}\", node.${propertyGetter}());");
+                    body.append("traverseAnyMap(\"${propertyName}\", n.${propertyGetter}());");
 
                 } else if (pt.isUnionType()) {
 
-                    body.append("traverseUnion(\"${propertyName}\", node.${propertyGetter}());");
+                    body.append("traverseUnion(\"${propertyName}\", n.${propertyGetter}());");
 
                 } else if (pt.isPrimitiveType()) {
                     // ignored
