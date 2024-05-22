@@ -47,6 +47,8 @@ public class NormalizePropertiesStage extends AbstractStage {
                 children.forEach(child -> allProperties.addAll(child.getProperties().values().stream().filter(p -> !p.isShadowed()).collect(Collectors.toSet())));
 
                 // Filter the full list of properties - only keep the properties that exist in *all* children.
+                // TODO: Properties are compared by "raw type", which includes aliases. If two different schema versions uses an alias with the same name,
+                // but for different union variants, it causes issues.
                 List<PropertyModel> propertiesToLift = allProperties.stream()
                         .filter(property -> children.stream()
                                 .map(c -> hasPropertyWithRawType(c.getProperties(), property))
