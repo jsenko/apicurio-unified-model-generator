@@ -9,11 +9,16 @@ namespace: io.apicurio.datamodels.models.jsonschema.vdraft4
 # - Keep everything in alphabetical order please
 
 root:
-  type: Schema
+  type: SchemaR
 
 typeAliases:
 
-  - name: Schema
+  # TODO: We should be able to use the same name as in version 2019-09 and later ("Schema"),
+  # but we would have to implement union normalization, i.e. lifting union types based on common variants.
+  # TODO: We should be able to define union rules together with the variants, i.e. each schema entity would define its own union rule,
+  # instead of having to repeat them for each union alias or property.
+  # This would also allow us to transform traits into unions, and we could have trait properties.
+  - name: SchemaR
     type: ArraySchema|BooleanSchema|ComplexSchema|EmptySchema|IntegerSchema|NullSchema|NumberSchema|ObjectSchema|Reference|StringSchema
     unionRules:
       - unionType: ArraySchema
@@ -30,7 +35,7 @@ typeAliases:
         ruleType: IsJsonObjectWithPropertyTypes
         name: type
         jsonTypes: [ array ]
-      - unionType: EmptySchema # TODO: Clashes with Reference. We need AND operator.
+      - unionType: EmptySchema # TODO: Clashes with Reference. We need an AND operator.
         ruleType: IsJsonObjectWithoutPropertyName
         name: type
       - unionType: IntegerSchema
@@ -62,7 +67,7 @@ typeAliases:
         name: type
         jsonType: string
         jsonValue: string
-  - name: SchemaExt
+  - name: SchemaRExt
     type: ArraySchema|BooleanSchema|ComplexSchema|EmptySchema|IntegerSchema|NullSchema|NumberSchema|ObjectSchema|Reference|StringSchema|boolean
     unionRules:
       - unionType: ArraySchema
@@ -138,12 +143,12 @@ traits:
   - name: AllOf
     properties:
       - name: allOf
-        type: "[Schema]"
+        type: "[SchemaR]"
 
   - name: AnyOf
     properties:
       - name: anyOf
-        type: "[Schema]"
+        type: "[SchemaR]"
 
   - name: Definitions
     properties:
@@ -172,7 +177,7 @@ traits:
   - name: Not
     properties:
       - name: not
-        type: Schema
+        type: SchemaR
 
   - name: Numeric
     transparent: true
@@ -191,7 +196,7 @@ traits:
   - name: OneOf
     properties:
       - name: oneOf
-        type: "[Schema]"
+        type: "[SchemaR]"
 
 entities:
 
@@ -206,9 +211,9 @@ entities:
       - OneOf
     properties:
       - name: additionalItems
-        type: SchemaExt
+        type: SchemaRExt
       - name: items
-        type: Schema|[Schema]
+        type: SchemaR|[SchemaR]
       - name: maxItems
         type: integer
       - name: minItems
@@ -359,7 +364,7 @@ entities:
       - OneOf
     properties:
       - name: additionalProperties
-        type: "{SchemaExt}"
+        type: "{SchemaRExt}"
       - name: dependencies
         type: "{Dependency}"
       - name: maxProperties
@@ -367,9 +372,9 @@ entities:
       - name: minProperties
         type: integer
       - name: patternProperties
-        type: "{Schema}"
+        type: "{SchemaR}"
       - name: properties
-        type: "{Schema}"
+        type: "{SchemaR}"
       - name: required
         type: "[string]"
       - name: type

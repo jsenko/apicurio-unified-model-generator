@@ -10,11 +10,11 @@ namespace: io.apicurio.datamodels.models.jsonschema.vdraft6
 # - Release notes: https://json-schema.org/draft-06/json-schema-release-notes.html
 
 root:
-  type: Schema
+  type: SchemaR
 
 typeAliases:
 
-  - name: Schema
+  - name: SchemaR
     type: ArraySchema|BooleanSchema|ComplexSchema|EmptySchema|IntegerSchema|NullSchema|NumberSchema|ObjectSchema|Reference|StringSchema
     unionRules:
       - unionType: ArraySchema
@@ -31,7 +31,7 @@ typeAliases:
         ruleType: IsJsonObjectWithPropertyTypes
         name: type
         jsonTypes: [ array ]
-      - unionType: EmptySchema # TODO: Clashes with Reference. We need AND operator.
+      - unionType: EmptySchema # TODO: Clashes with Reference. We need an AND operator.
         ruleType: IsJsonObjectWithoutPropertyName
         name: type
       - unionType: IntegerSchema
@@ -142,12 +142,12 @@ traits:
   - name: AllOf
     properties:
       - name: allOf
-        type: "[SchemaExt]"
+        type: "[SchemaRExt]"
 
   - name: AnyOf
     properties:
       - name: anyOf
-        type: "[SchemaExt]"
+        type: "[SchemaRExt]"
 
   - name: Const
     properties:
@@ -183,7 +183,7 @@ traits:
   - name: Not
     properties:
       - name: not
-        type: SchemaExt
+        type: SchemaRExt
 
   - name: Numeric
     transparent: true
@@ -202,7 +202,7 @@ traits:
   - name: OneOf
     properties:
       - name: oneOf
-        type: "[SchemaExt]"
+        type: "[SchemaRExt]"
 
 entities:
 
@@ -218,11 +218,11 @@ entities:
       - OneOf
     properties:
       - name: additionalItems
-        type: SchemaExt
+        type: SchemaRExt
       - name: contains
-        type: SchemaExt
+        type: SchemaRExt
       - name: items
-        type: SchemaExt|[SchemaExt]
+        type: SchemaRExt|[SchemaRExt]
       - name: maxItems
         type: integer
       - name: minItems
@@ -385,7 +385,7 @@ entities:
       - OneOf
     properties:
       - name: additionalProperties
-        type: "{SchemaExt}"
+        type: "{SchemaRExt}"
       - name: dependencies
         type: "{Dependency}"
       - name: maxProperties
@@ -393,9 +393,9 @@ entities:
       - name: minProperties
         type: integer
       - name: patternProperties
-        type: "{SchemaExt}"
+        type: "{SchemaRExt}"
       - name: properties
-        type: "{SchemaExt}"
+        type: "{SchemaRExt}"
       - name: propertyNames
         type: EmptySchema|StringSchema|boolean
         unionRules:
