@@ -12,7 +12,7 @@ public class TestUnionsUMGTest extends AbstractUMGTest {
 
         ClassLoader classLoader = getClass().getClassLoader();
         var specifications = List.of(
-                new File(classLoader.getResource("specs/json-schema.yaml").getFile())
+                new File(classLoader.getResource("specs/test.yaml").getFile())
         );
 
         var rootNamespace = "io.apicurio.datamodels.models";

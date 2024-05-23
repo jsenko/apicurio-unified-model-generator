@@ -1,8 +1,8 @@
-name: Test Schema
-url: none
-description: none
-prefix: Test
-namespace: io.apicurio.datamodels.models.test2
+name: JSON Schema
+url: https://json-schema.org/
+description: JSON Schema is a vocabulary that allows you to annotate and validate JSON documents.
+prefix: J
+namespace: io.apicurio.datamodels.models.jsonschema
 versions:
-  - $ref: ./test/test1.yaml
-  - $ref: ./test/test2.yaml
+  - $ref: ./test/json-schema-draft-4.yaml
+  - $ref: ./test/json-schema-2020-12.yaml

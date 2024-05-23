@@ -1,0 +1,163 @@
+name: JSON Schema 2020-12
+version: 2020-12
+versions:
+  - version: 2020-12
+    url: https://tools.ietf.org/html/draft-bhutton-json-schema-validation-01
+prefix: J2020
+namespace: io.apicurio.datamodels.models.jsonschema.v202012
+# NOTES:
+# - Keep everything in alphabetical order please
+# - Release notes: https://json-schema.org/draft/2020-12/release-notes.html
+
+root:
+  type: Schema
+
+typeAliases:
+
+  - name: Schema
+    type: ArraySchema|ObjectSchema
+    unionRules:
+      - unionType: ArraySchema
+        ruleType: IsJsonObjectWithPropertyValue
+        name: type
+        jsonType: string
+        jsonValue: array
+      - unionType: ObjectSchema
+        ruleType: IsJsonObjectWithPropertyValue
+        name: type
+        jsonType: string
+        jsonValue: object
+  - name: SchemaExt
+    type: ArraySchema|ObjectSchema|boolean
+    unionRules:
+      - unionType: ArraySchema
+        ruleType: IsJsonObjectWithPropertyValue
+        name: type
+        jsonType: string
+        jsonValue: array
+      - unionType: ObjectSchema
+        ruleType: IsJsonObjectWithPropertyValue
+        name: type
+        jsonType: string
+        jsonValue: object
+      - unionType: boolean
+        ruleType: IsJsonTypes
+        jsonTypes: [ boolean ]
+
+traits:
+
+  - name: AllOf
+    properties:
+      - name: allOf
+        type: "[SchemaExt]"
+
+  - name: Else
+    properties:
+      - name: else
+        type: SchemaExt
+
+  - name: If
+    properties:
+      - name: if
+        type: SchemaExt
+
+  - name: Metadata
+    transparent: true
+    properties:
+      - name: title
+        type: string
+
+  - name: Not
+    properties:
+      - name: not
+        type: SchemaExt
+
+  - name: Ref
+    properties:
+      - name: $dynamicRef
+        type: string
+      - name: $ref
+        type: string
+
+  - name: Then
+    properties:
+      - name: then
+        type: SchemaExt
+
+entities:
+
+  - name: ArraySchema
+    traits:
+      - AllOf
+      - Else
+      - If
+      - Metadata
+      - Not
+      - Ref
+      - Then
+    properties:
+      - name: contains
+        type: SchemaExt
+      - name: items
+        type: SchemaExt
+      - name: maxContains
+        type: integer
+      - name: maxItems
+        type: integer
+      - name: minContains
+        type: integer
+      - name: minItems
+        type: integer
+      - name: prefixItems
+        type: SchemaExt|[SchemaExt]
+      - name: type
+        type: string
+      - name: unevaluatedItems
+        type: SchemaExt
+      - name: uniqueItems
+        type: boolean
+    propertyOrder:
+      - $AllOf
+      - $Else
+      - $If
+      - $Metadata
+      - $Not
+      - $Ref
+      - $Then
+      - $this
+
+  - name: ObjectSchema
+    traits:
+      - AllOf
+      - Else
+      - If
+      - Metadata
+      - Not
+      - Ref
+      - Then
+    properties:
+      - name: additionalProperties
+        type: "{SchemaExt}"
+      - name: maxProperties
+        type: integer
+      - name: minProperties
+        type: integer
+      - name: patternProperties
+        type: "{SchemaExt}"
+      - name: properties
+        type: "{SchemaExt}"
+      - name: required
+        type: "[string]"
+      - name: type
+        type: string
+      - name: unevaluatedProperties
+        type: SchemaExt
+    propertyOrder:
+      - $AllOf
+      - $Else
+      - $If
+      - $Metadata
+      - $Not
+      - $Ref
+      - $Then
+      - $this

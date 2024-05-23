@@ -1,0 +1,137 @@
+name: JSON Schema Draft 4
+version: draft-4
+versions:
+  - version: draft-4
+    url: https://tools.ietf.org/html/draft-fge-json-schema-validation-00
+prefix: JD4
+namespace: io.apicurio.datamodels.models.jsonschema.vdraft4
+# NOTES:
+# - Keep everything in alphabetical order please
+
+root:
+  type: SchemaR
+
+typeAliases:
+
+  # TODO: We should be able to use the same name as in version 2019-09 and later ("Schema"),
+  # but we would have to implement union normalization, i.e. lifting union types based on common variants.
+  # TODO: We should be able to define union rules together with the variants, i.e. each schema entity would define its own union rule,
+  # instead of having to repeat them for each union alias or property.
+  # This would also allow us to transform traits into unions, and we could have trait properties.
+  - name: SchemaR
+    type: ArraySchema|ObjectSchema|Reference
+    unionRules:
+      - unionType: ArraySchema
+        ruleType: IsJsonObjectWithPropertyValue
+        name: type
+        jsonType: string
+        jsonValue: array
+      - unionType: ObjectSchema
+        ruleType: IsJsonObjectWithPropertyValue
+        name: type
+        jsonType: string
+        jsonValue: object
+      - unionType: Reference
+        ruleType: IsJsonObjectWithPropertyTypes
+        name: $ref
+        jsonTypes: [ string ]
+  - name: SchemaRExt
+    type: ArraySchema|ObjectSchema|Reference|boolean
+    unionRules:
+      - unionType: ArraySchema
+        ruleType: IsJsonObjectWithPropertyValue
+        name: type
+        jsonType: string
+        jsonValue: array
+      - unionType: ObjectSchema
+        ruleType: IsJsonObjectWithPropertyValue
+        name: type
+        jsonType: string
+        jsonValue: object
+      - unionType: Reference
+        ruleType: IsJsonObjectWithPropertyTypes
+        name: $ref
+        jsonTypes: [ string ]
+      - unionType: boolean
+        ruleType: IsJsonTypes
+        jsonTypes: [ boolean ]
+
+traits:
+
+  - name: AllOf
+    properties:
+      - name: allOf
+        type: "[SchemaR]"
+
+  - name: Metadata
+    transparent: true
+    properties:
+      - name: title
+        type: string
+
+  - name: Not
+    properties:
+      - name: not
+        type: SchemaR
+
+entities:
+
+  - name: ArraySchema
+    traits:
+      - AllOf
+      - Metadata
+      - Not
+    properties:
+      - name: additionalItems
+        type: SchemaRExt
+      - name: items
+        type: SchemaR|[SchemaR]
+      - name: maxItems
+        type: integer
+      - name: minItems
+        type: integer
+      - name: type
+        type: string
+      - name: uniqueItems
+        type: boolean
+    propertyOrder:
+      - $AllOf
+      - $Metadata
+      - $Not
+      - $this
+
+  - name: ObjectSchema
+    traits:
+      - AllOf
+      - Metadata
+      - Not
+    properties:
+      - name: additionalProperties
+        type: "{SchemaRExt}"
+      - name: maxProperties
+        type: integer
+      - name: minProperties
+        type: integer
+      - name: patternProperties
+        type: "{SchemaR}"
+      - name: properties
+        type: "{SchemaR}"
+      - name: required
+        type: "[string]"
+      - name: type
+        type: string
+    propertyOrder:
+      - $AllOf
+      - $Metadata
+      - $Not
+      - $this
+
+  - name: Reference
+    traits:
+      - Metadata
+    properties:
+      - name: $ref
+        type: string
+    propertyOrder:
+      - $Metadata
+      - $this
