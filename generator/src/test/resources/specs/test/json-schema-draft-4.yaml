@@ -9,7 +9,7 @@ namespace: io.apicurio.datamodels.models.jsonschema.vdraft4
 # - Keep everything in alphabetical order please
 
 root:
-  type: SchemaR
+  type: Schema
 
 typeAliases:
 
@@ -18,7 +18,7 @@ typeAliases:
   # TODO: We should be able to define union rules together with the variants, i.e. each schema entity would define its own union rule,
   # instead of having to repeat them for each union alias or property.
   # This would also allow us to transform traits into unions, and we could have trait properties.
-  - name: SchemaR
+  - name: Schema
     type: ArraySchema|ObjectSchema|Reference
     unionRules:
       - unionType: ArraySchema
@@ -35,7 +35,7 @@ typeAliases:
         ruleType: IsJsonObjectWithPropertyTypes
         name: $ref
         jsonTypes: [ string ]
-  - name: SchemaRExt
+  - name: SchemaExt
     type: ArraySchema|ObjectSchema|Reference|boolean
     unionRules:
       - unionType: ArraySchema
@@ -61,7 +61,7 @@ traits:
   - name: AllOf
     properties:
       - name: allOf
-        type: "[SchemaR]"
+        type: "[Schema]"
 
   - name: Metadata
     transparent: true
@@ -72,7 +72,7 @@ traits:
   - name: Not
     properties:
       - name: not
-        type: SchemaR
+        type: Schema
 
 entities:
 
@@ -83,9 +83,9 @@ entities:
       - Not
     properties:
       - name: additionalItems
-        type: SchemaRExt
+        type: SchemaExt
       - name: items
-        type: SchemaR|[SchemaR]
+        type: Schema|[Schema]
       - name: maxItems
         type: integer
       - name: minItems
@@ -107,15 +107,15 @@ entities:
       - Not
     properties:
       - name: additionalProperties
-        type: "{SchemaRExt}"
+        type: "{SchemaExt}"
       - name: maxProperties
         type: integer
       - name: minProperties
         type: integer
       - name: patternProperties
-        type: "{SchemaR}"
+        type: "{Schema}"
       - name: properties
-        type: "{SchemaR}"
+        type: "{Schema}"
       - name: required
         type: "[string]"
       - name: type

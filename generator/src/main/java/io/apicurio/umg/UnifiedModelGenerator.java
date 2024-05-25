@@ -76,6 +76,7 @@ public class UnifiedModelGenerator {
         pipe.addStage(new NormalizeTraitsStage());
         pipe.addStage(new NormalizeEntitiesStage());
         pipe.addStage(new NormalizePropertiesStage());
+        pipe.addStage(new NormalizeUnionsStage());
         pipe.addStage(new NormalizeVisitorsStage());
         pipe.addStage(new ResolveVisitorEntityStage());
         pipe.addStage(new CreatePropertyComparatorStage());

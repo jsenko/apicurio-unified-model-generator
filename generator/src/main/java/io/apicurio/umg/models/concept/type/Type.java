@@ -22,7 +22,4 @@ public interface Type extends TypeLike {
      */
     @Override
     Type getParent();
-
-
-
 }

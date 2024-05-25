@@ -22,6 +22,4 @@ public abstract class AbstractTypeLike implements TypeLike {
     protected TypeLike parent;
 
     protected boolean leaf;
-
-
 }
